@@ -1,5 +1,5 @@
 # Dockerfile for B2B API Backend
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
@@ -10,14 +10,14 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Expose port
+# Expose port (Render will set PORT env var)
 EXPOSE 8000
 
 # Run database initialization and start server
-CMD python scripts/init_db.py && uvicorn app:app --host 0.0.0.0 --port 8000
+CMD python scripts/init_db.py && uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
 

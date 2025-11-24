@@ -1,0 +1,25 @@
+# Alternative render.yaml using Dockerfile
+# Use this if build.sh approach doesn't work
+services:
+  - type: web
+    name: soulmate-b2b-api
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: web_app/backend/Dockerfile
+    dockerContext: web_app/backend
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: https://soulmate.syncscript.app,https://www.soulmate.syncscript.app
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 10080
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
+

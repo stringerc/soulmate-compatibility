@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowRight, Shield, Zap, Users, CheckCircle2, Star, Play, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowRight, Shield, Zap, Users, CheckCircle2, Star, Play, ChevronDown, History, LogIn, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { isAuthenticated, getCurrentUser, signOut, requestMagicLink } from '@/lib/auth';
+import SaveResults from './SaveResults';
 
 interface LandingPageProps {
   onStartTest: () => void;
@@ -11,6 +13,58 @@ interface LandingPageProps {
 
 export default function LandingPage({ onStartTest, onViewHistory }: LandingPageProps) {
   const [showFAQ, setShowFAQ] = useState<string | null>(null);
+  const [isAuth, setIsAuth] = useState(false);
+  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginMessage, setLoginMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const authStatus = await isAuthenticated();
+    setIsAuth(authStatus);
+    if (authStatus) {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setLoginMessage('');
+    
+    try {
+      const result = await requestMagicLink(loginEmail);
+      if (result.success) {
+        setLoginMessage('Check your email for a magic link!');
+        setShowLoginModal(false);
+        setLoginEmail('');
+      } else {
+        setLoginMessage(result.message || 'Failed to send magic link');
+      }
+    } catch (error) {
+      setLoginMessage('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsAuth(false);
+    setUser(null);
+  };
+
+  const handleViewHistory = () => {
+    if (onViewHistory) {
+      onViewHistory();
+    }
+  };
 
   const faqs = [
     {
@@ -42,6 +96,114 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header with Login/Account */}
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="w-6 h-6 text-pink-500" />
+              <span className="text-xl font-bold text-gray-900 dark:text-white">Soulmate Compatibility</span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {isAuth && user ? (
+                <>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:inline">{user.email}</span>
+                  </div>
+                  {onViewHistory && (
+                    <button
+                      onClick={handleViewHistory}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
+                    >
+                      <History className="w-4 h-4" />
+                      <span className="hidden sm:inline">View History</span>
+                      <span className="sm:hidden">History</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden sm:inline">Sign Out</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 rounded-lg transition-all shadow-md hover:shadow-lg"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sign In</span>
+                  <span className="sm:hidden">Login</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Sign In</h3>
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  setLoginEmail('');
+                  setLoginMessage('');
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Enter your email to receive a magic link. No password needed!
+            </p>
+            <form onSubmit={handleLogin}>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              />
+              {loginMessage && (
+                <p className={`text-sm mb-4 ${loginMessage.includes('Check your email') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {loginMessage}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Sending...' : 'Send Magic Link'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLoginModal(false);
+                    setLoginEmail('');
+                    setLoginMessage('');
+                  }}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Trust Bar */}
       <div className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-2">
         <div className="container mx-auto px-4 text-center text-sm text-gray-600 dark:text-gray-400">

@@ -6,6 +6,7 @@ import ShareableResults from '@/components/ShareableResults';
 import LandingPage from '@/components/LandingPage';
 import ThemeToggle from '@/components/ThemeToggle';
 import FeedbackForm from '@/components/FeedbackForm';
+import ResultHistory from '@/components/ResultHistory';
 
 export default function Home() {
   const [person1Traits, setPerson1Traits] = useState<number[] | null>(null);
@@ -73,6 +74,10 @@ export default function Home() {
 
   const handleStartTest = () => {
     setStep('person1');
+  };
+
+  const handleViewHistory = () => {
+    setStep('history');
   };
 
   return (

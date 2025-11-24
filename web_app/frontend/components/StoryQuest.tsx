@@ -268,21 +268,28 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     
     // CRITICAL FIX: Save current scenario response if selected but not yet saved
     let finalResponses = [...responses];
+    let finalConfidence = [...confidenceScores];
+    
+    // Ensure arrays are correct size
+    while (finalResponses.length < TOTAL_SCENARIOS) {
+      finalResponses.push(0.5);
+    }
+    while (finalConfidence.length < TOTAL_SCENARIOS) {
+      finalConfidence.push(0.5);
+    }
+    
+    // Save the current scenario response if selected
     if (currentScenario && selectedChoice !== null) {
-      // Ensure array is correct size
-      while (finalResponses.length < TOTAL_SCENARIOS) {
-        finalResponses.push(0.5);
-      }
-      // Save the current response
       if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
         finalResponses[currentScenario.index] = currentScenario.choices[selectedChoice].value;
+        // Ensure confidence is set (use existing or default to 0.5)
+        if (finalConfidence[currentScenario.index] === 0.5 && showConfidence) {
+          finalConfidence[currentScenario.index] = confidenceScores[currentScenario.index] || 0.5;
+        }
       }
     }
     
-    // CRITICAL FIX: Update state with final responses before validation
-    setResponses(finalResponses);
-    
-    // Double-check completion status with better validation
+    // CRITICAL FIX: Use finalResponses for validation (not state - state updates are async!)
     const answeredCountCheck = finalResponses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
     const allAnsweredCheck = answeredCountCheck === TOTAL_SCENARIOS && finalResponses.length === TOTAL_SCENARIOS;
     
@@ -308,26 +315,35 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       console.warn('- Answered count:', answeredCountCheck);
       console.warn('- Current scenario index:', currentScenario?.index);
       console.warn('- Selected choice:', selectedChoice);
+      console.warn('- Is last scenario:', isLastScenario);
       console.warn('- Responses:', finalResponses);
       
-      // CRITICAL FIX: If user is on last scenario, auto-complete if they've answered most
-      if (isLastScenario && answeredCountCheck >= TOTAL_SCENARIOS - 3) {
+      // CRITICAL FIX: Auto-complete if user is on last scenario and has answered 30+ scenarios
+      if (isLastScenario && answeredCountCheck >= TOTAL_SCENARIOS - 2) {
+        console.log(`Auto-completing: User answered ${answeredCountCheck} of ${TOTAL_SCENARIOS}, filling ${unansweredIndices.length} missing scenarios`);
         // Fill missing with default values and proceed automatically
         unansweredIndices.forEach(idx => {
           finalResponses[idx] = 0.5; // Default neutral value
+          finalConfidence[idx] = 0.5; // Default confidence
         });
         // Update state and continue
         setResponses(finalResponses);
-        // Continue with completion below
+        setConfidenceScores(finalConfidence);
+        // Continue with completion below (don't return)
       } else {
         alert(
           `Please answer all ${TOTAL_SCENARIOS} scenarios before completing.\n\n` +
           `You've answered ${answeredCountCheck} of ${TOTAL_SCENARIOS} scenarios.\n\n` +
-          `Missing: ${unansweredScenarios.slice(0, 5).join(', ')}${unansweredScenarios.length > 5 ? '...' : ''}`
+          `Missing scenarios: ${unansweredScenarios.slice(0, 5).join(', ')}${unansweredScenarios.length > 5 ? '...' : ''}\n\n` +
+          `Tip: Make sure you've selected a choice and clicked "Next" for each scenario.`
         );
         return;
       }
     }
+    
+    // Update state with final values
+    setResponses(finalResponses);
+    setConfidenceScores(finalConfidence);
     
     // Birthdate is now optional - show warning but allow completion
     if (!birthdate) {

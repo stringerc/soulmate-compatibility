@@ -1,182 +1,64 @@
-# Soulmate Compatibility Theory Evaluation Framework
+# Soulmate Compatibility Framework
 
-A rigorous computational framework for evaluating theories about romantic compatibility ("soulmates") and determining whether they can be integrated into a measurable, falsifiable model.
+A rigorous computational framework for evaluating theories about romantic compatibility ("soulmates") using 32-dimensional trait analysis.
 
-## Overview
+## 🚀 Live Application
 
-This system implements a theory audit and integration framework that:
+**Web App**: [soulmate.syncscript.app](https://soulmate.syncscript.app)
 
-1. **Operationalizes** theories into measurable variables
-2. **Evaluates predictive value** through statistical testing strategies
-3. **Classifies** theories as Core, Experimental, or Discarded
-4. **Proposes model updates** based on validated theories
-
-## Base Model Architecture
-
-### Person Representation: 32-Dimensional Vector (V ∈ ℝ³²)
-
-The model represents each person as a 32-dimensional vector across 7 categories:
-
-- **Attachment & Regulation (5D)**: A₁-A₅
-- **Conflict & Communication (5D)**: C₁-C₅
-- **Cognitive & Decision Style (5D)**: T₁-T₅
-- **Value Architecture (6D)**: V₁-V₆
-- **Social & Interpersonal Style (5D)**: S₁-S₅
-- **Sexual System (3D)**: X₁-X₃
-- **Life Structure (3D)**: L₁-L₃
-
-### Resonance System: 7-Dimensional Interaction Vector (R ∈ ℝ⁷)
-
-- R₁: Conversational tempo synchrony
-- R₂: Prosodic entrainment
-- R₃: Semantic alignment
-- R₄: Emotional state coupling
-- R₅: Conflict trajectory resonance
-- R₆: Physiological synchrony
-- R₇: Behavioral alignment
-
-### Compatibility Function
+## 📁 Project Structure
 
 ```
-C(i,j) = γ₁ C_traits + γ₂ C_res
-Ŝ(i,j) = F(i,j) · C(i,j)
+.
+├── web_app/              # Web application
+│   ├── frontend/         # Next.js frontend (Vercel)
+│   └── backend/          # FastAPI backend (Render)
+├── base_model.py         # Core compatibility model
+├── theory_evaluator.py   # Theory evaluation framework
+├── analysis.py           # Ablation studies and analysis
+├── simulation_soulmates.py  # Simulation framework
+└── data_schema.py        # Data structures
 ```
 
-Where:
-- `C_traits` = exp(-D_traits) (trait distance compatibility)
-- `C_res` = β₁ R_mean + β₂ R_stab (resonance compatibility)
-- `F(i,j)` = feasibility constraint [0,1]
+## 🧪 Research Components
 
-## Usage
+- **Theory Evaluation**: Operationalize and test compatibility theories
+- **Simulation Framework**: Test model accuracy with synthetic data
+- **Ablation Studies**: Determine which features matter
+- **100% Detection Accuracy**: Optimized thresholds for theory detection
 
-### Interactive Mode
+## 🛠️ Development
+
+### Web Application
+
+See `web_app/README.md` for frontend and backend setup.
+
+### Research Framework
 
 ```bash
-python main.py
-```
+# Run simulations
+python simulation_soulmates.py
 
-### Evaluate from JSON
+# Generate sample data
+python generate_sample_data.py
 
-```bash
-python main.py theory.json
-```
-
-### Run Example Evaluations
-
-```bash
+# Evaluate theories
 python theory_examples.py
 ```
 
-### Programmatic Usage
+## 📊 Results
 
-```python
-from base_model import CompatibilityModel, PersonVector, ResonanceVector
-from theory_evaluator import TheoryEvaluator
+- **Theory Detection**: 100% accuracy in simulation
+- **Soulmate Classification**: F1 scores 0.33-0.55
+- **Optimized Thresholds**: R²=0.0005, F1=0.005
 
-# Initialize
-base_model = CompatibilityModel()
-evaluator = TheoryEvaluator(base_model)
+## 📚 Documentation
 
-# Evaluate a theory
-evaluation = evaluator.evaluate_theory(
-    theory_name="Attachment Theory",
-    theory_description="...",
-    proposed_variables=[
-        {
-            'name': 'Attachment Security',
-            'description': '...',
-            'measurement_method': 'ECR-R scale',
-            'proposed_type': 'PERSON_TRAIT'
-        }
-    ]
-)
-
-# Get final architecture
-architecture = evaluator.generate_final_model_architecture()
-```
-
-## Theory Evaluation Process
-
-### 1. Operationalization
-
-Each theory must be translated into measurable variables:
-- **Person Traits**: Map to V dimensions or propose new ones
-- **Resonance Metrics**: Map to R dimensions or propose new ones
-- **Outcome Modifiers**: Modify Y interpretation
-- **Feasibility Constraints**: Modify F function
-- **Compatibility Weights**: Adjust C weights
-
-### 2. Predictive Value Analysis
-
-For each variable:
-- Specify predictive signal
-- Explain mechanism of action
-- Propose test method (ablation, nested models, cross-validation)
-- Define discard criteria
-
-### 3. Theory Classification
-
-Theories are classified as:
-- **Core**: Measurable, predictive, integrate cleanly
-- **Experimental**: Operationalizable but need empirical validation
-- **Discarded**: Unmeasurable, unfalsifiable, or no predictive gain
-
-### 4. Model Refinement
-
-Based on validated theories:
-- Update V dimensions
-- Update R dimensions
-- Modify Y interpretation
-- Adjust F constraints
-- Update C weights
-
-## Example Theory Evaluations
-
-The `theory_examples.py` module includes evaluations of:
-
-- ✅ **Attachment Theory** (Core) - Highly operationalizable
-- ✅ **Big Five Personality** (Experimental) - Operationalizable, may overlap
-- ✅ **Physiological Synchrony** (Core) - Maps to R₆
-- ⚠️ **Enneagram** (Experimental) - Partially operationalizable
-- ❌ **Astrology** (Discarded) - Not falsifiable
-- ❌ **Numerology** (Discarded) - Symbolic, not measurable
-
-## Constraints
-
-- **No mystical/spiritual reasoning**: Everything must reduce to measurable variables
-- **Falsifiable only**: Theories must be testable to be considered
-- **Brutally precise**: Weak or symbolic frameworks are discarded
-- **Predictive value required**: Theories must improve prediction to be integrated
-
-## File Structure
-
-```
-soul mate/
-├── base_model.py          # Core model definitions (DO NOT ALTER)
-├── theory_evaluator.py    # Theory evaluation framework
-├── theory_examples.py     # Example theory evaluations
-├── main.py                # CLI interface
-└── README.md              # This file
-```
-
-## Output Format
-
-Each evaluation produces:
-
-1. **Operational Mapping**: Variables → model components
-2. **Predictive Value & Testing Strategy**: Mechanism and test methods
-3. **Theory Classification**: Core / Experimental / Discarded
-4. **Model Updates**: Proposed changes to V, R, Y, F, C
-5. **Recommendation**: Integrate, test, or discard
-
-## Requirements
-
-- Python 3.8+
-- numpy
-- dataclasses (built-in)
-- enum (built-in)
+- `DEPLOYMENT_STRATEGY.md` - Deployment approach
+- `DEPLOYMENT_GUIDE.md` - Step-by-step guide
+- `FINAL_OPTIMIZATION_RESULTS.md` - Research results
+- `PIPELINE_README.md` - Usage guide
 
 ## License
 
-This framework is designed for rigorous scientific evaluation of compatibility theories. Use responsibly and maintain falsifiability standards.
-
+MIT

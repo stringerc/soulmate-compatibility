@@ -1,14 +1,16 @@
 {
-  "version": 2,
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://soulmate-b2b-api.onrender.com"
+  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://soulmate-api.onrender.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     }
   ]
 }
-

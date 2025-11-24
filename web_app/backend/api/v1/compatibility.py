@@ -14,6 +14,7 @@ from database.connection import get_db
 from database.models import APIUsage, Partner
 from api.auth import verify_api_key_dependency, check_rate_limit
 from api.analytics import track_api_usage
+import uuid
 
 # Import compatibility calculation logic
 # Note: In production, these should be imported from a shared package

@@ -48,10 +48,21 @@ export const isAuthenticated = async (): Promise<boolean> => {
   }
 };
 
+interface MagicLinkResponse {
+  success: boolean;
+  message: string;
+  devLink?: string;
+  backupLink?: string;
+  emailFailed?: boolean;
+  emailId?: string;
+  warning?: string;
+  errorDetails?: any;
+}
+
 /**
  * Request magic link
  */
-export const requestMagicLink = async (email: string): Promise<{ success: boolean; message: string; devLink?: string }> => {
+export const requestMagicLink = async (email: string): Promise<MagicLinkResponse> => {
   try {
     const response = await fetch('/api/auth/magic-link', {
       method: 'POST',
@@ -62,8 +73,11 @@ export const requestMagicLink = async (email: string): Promise<{ success: boolea
     const data = await response.json();
     
     // Log for debugging
-    if (data.devLink) {
-      console.log('[AUTH] Magic link (dev mode):', data.devLink);
+    if (data.devLink || data.backupLink) {
+      console.log('[AUTH] Magic link (dev/backup mode):', data.devLink || data.backupLink);
+    }
+    if (data.emailId) {
+      console.log('[AUTH] Email sent successfully, ID:', data.emailId);
     }
     
     return data;

@@ -27,19 +27,19 @@ export default function SaveResults({ person1Data, person2Data, compatibilitySco
 
   // Check authentication status on mount
   useEffect(() => {
+    const checkAuth = async () => {
+      const auth = await isAuthenticated();
+      setIsAuthenticated(auth);
+      if (auth) {
+        const user = await getCurrentUser();
+        if (user) {
+          setEmail(user.email);
+        }
+      }
+    };
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
-    const auth = await isAuthenticated();
-    setIsAuthenticated(auth);
-    if (auth) {
-      const user = await getCurrentUser();
-      if (user) {
-        setEmail(user.email);
-      }
-    }
-  };
 
   const handleSaveClick = async () => {
     if (isAuthenticated) {

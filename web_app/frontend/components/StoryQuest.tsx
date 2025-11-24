@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { STORY_SCENARIOS, CHAPTER_THEMES, getCategoryChapters, getScenariosForChapter } from '@/lib/storyScenarios';
 import { Sparkles, Heart, Trophy, Star, CheckCircle2 } from 'lucide-react';
+import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOff, trackButtonClick } from '@/lib/analytics';
 
 interface StoryQuestProps {
   personNumber: number;
@@ -19,28 +20,104 @@ interface Badge {
 export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps) {
   // Use actual scenario count from STORY_SCENARIOS
   const TOTAL_SCENARIOS = STORY_SCENARIOS.length;
-  const [responses, setResponses] = useState<number[]>(new Array(TOTAL_SCENARIOS).fill(0.5));
-  const [confidenceScores, setConfidenceScores] = useState<number[]>(new Array(TOTAL_SCENARIOS).fill(0.5));
-  const [birthdate, setBirthdate] = useState('');
-  const [name, setName] = useState('');
-  const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
-  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
+  const STORAGE_KEY = `soulmate-progress-${personNumber}`;
+  
+  // Load saved progress from localStorage
+  const loadSavedProgress = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        // Check if saved data is recent (within 7 days)
+        const daysSince = (Date.now() - (data.timestamp || 0)) / (1000 * 60 * 60 * 24);
+        if (daysSince < 7) {
+          return data;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load saved progress:', e);
+    }
+    return null;
+  };
+
+  const savedProgress = loadSavedProgress();
+  const [responses, setResponses] = useState<number[]>(
+    savedProgress?.responses || new Array(TOTAL_SCENARIOS).fill(0.5)
+  );
+  const [confidenceScores, setConfidenceScores] = useState<number[]>(
+    savedProgress?.confidenceScores || new Array(TOTAL_SCENARIOS).fill(0.5)
+  );
+  const [birthdate, setBirthdate] = useState(savedProgress?.birthdate || '');
+  const [name, setName] = useState(savedProgress?.name || '');
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(savedProgress?.currentChapterIndex || 0);
+  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(savedProgress?.currentScenarioIndex || 0);
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
   const [showConfidence, setShowConfidence] = useState(false);
-  const [badges, setBadges] = useState<Badge[]>([]);
+  const [badges, setBadges] = useState<Badge[]>(savedProgress?.badges || []);
   const [compatibilityPower, setCompatibilityPower] = useState(0);
+  const [showResumePrompt, setShowResumePrompt] = useState(!!savedProgress);
+  
+  // Track time spent on current scenario
+  const scenarioStartTime = useRef<number>(Date.now());
+  const lastScenarioIndex = useRef<number>(currentScenarioIndex);
 
-  const chapters = getCategoryChapters();
-  const currentChapter = chapters[currentChapterIndex];
-  const currentScenarios = getScenariosForChapter(currentChapter);
-  const currentScenario = currentScenarios[currentScenarioIndex];
-  const theme = CHAPTER_THEMES[currentChapter] || CHAPTER_THEMES[chapters[0]];
+  // Memoize expensive calculations
+  const chapters = useMemo(() => getCategoryChapters(), []);
+  const currentChapter = useMemo(() => chapters[currentChapterIndex], [chapters, currentChapterIndex]);
+  const currentScenarios = useMemo(() => getScenariosForChapter(currentChapter), [currentChapter]);
+  const currentScenario = useMemo(() => currentScenarios[currentScenarioIndex], [currentScenarios, currentScenarioIndex]);
+  const theme = useMemo(() => CHAPTER_THEMES[currentChapter] || CHAPTER_THEMES[chapters[0]], [currentChapter, chapters]);
+
+  // Save progress to localStorage after each change
+  useEffect(() => {
+    try {
+      const progressData = {
+        responses,
+        confidenceScores,
+        birthdate,
+        name,
+        currentChapterIndex,
+        currentScenarioIndex,
+        badges,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+    } catch (e) {
+      console.warn('Failed to save progress:', e);
+    }
+  }, [responses, confidenceScores, birthdate, name, currentChapterIndex, currentScenarioIndex, badges, STORAGE_KEY]);
 
   useEffect(() => {
     // Calculate progress
     const answered = responses.filter(r => r !== 0.5).length;
     setCompatibilityPower(Math.round((answered / TOTAL_SCENARIOS) * 100));
   }, [responses, TOTAL_SCENARIOS]);
+
+  // Track scenario changes
+  useEffect(() => {
+    if (currentScenario) {
+      // Track completion of previous scenario
+      if (lastScenarioIndex.current !== currentScenarioIndex) {
+        const timeSpent = Date.now() - scenarioStartTime.current;
+        trackScenarioComplete(lastScenarioIndex.current, currentChapterIndex, timeSpent);
+      }
+      
+      // Track start of new scenario
+      scenarioStartTime.current = Date.now();
+      lastScenarioIndex.current = currentScenarioIndex;
+      trackScenarioStart(currentScenario.index, currentChapterIndex);
+    }
+  }, [currentScenario, currentScenarioIndex, currentChapterIndex]);
+
+  // Track drop-off on unmount
+  useEffect(() => {
+    return () => {
+      const answered = responses.filter(r => r !== 0.5).length;
+      if (answered < TOTAL_SCENARIOS) {
+        trackDropOff(personNumber, currentChapterIndex, currentScenarioIndex, 'component_unmount');
+      }
+    };
+  }, []);
 
   const handleChoiceSelect = (choiceIndex: number) => {
     if (!currentScenario) return;
@@ -65,6 +142,8 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
 
   const handleNext = () => {
     if (!currentScenario) return;
+    
+    trackButtonClick('Continue Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
     
     // Check if we've completed all scenarios in this chapter
     if (currentScenarioIndex < currentScenarios.length - 1) {
@@ -114,35 +193,122 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   };
 
   const handleSubmit = () => {
+    trackButtonClick('Complete Your Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
+    
+    // Birthdate is now optional - show warning but allow completion
     if (!birthdate) {
-      alert('Please enter a birthdate');
-      return;
+      const proceed = confirm(
+        'Birthdate is optional but needed for astrology/numerology features.\n\n' +
+        'Would you like to continue without birthdate?'
+      );
+      if (!proceed) {
+        return;
+      }
     }
     
     // Award completion badge
     awardBadge('complete');
     
-    onComplete(responses, birthdate, name || `Person ${personNumber}`, confidenceScores);
+    // Track completion
+    const answered = responses.filter(r => r !== 0.5).length;
+    trackCompletion(personNumber, true, TOTAL_SCENARIOS, answered);
+    
+    // Clear saved progress on completion
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.warn('Failed to clear saved progress:', e);
+    }
+    
+    onComplete(responses, birthdate || '', name || `Person ${personNumber}`, confidenceScores);
   };
 
-  const progress = ((currentChapterIndex + 1) / chapters.length) * 100;
-  const chapterProgress = currentScenarios.length > 0 
-    ? ((currentScenarioIndex + 1) / currentScenarios.length) * 100 
-    : 0;
-  const allAnswered = responses.every(r => r !== 0.5);
-  const isLastScenario = currentChapterIndex === chapters.length - 1 && 
-                         currentScenarioIndex === currentScenarios.length - 1;
+  const handleResume = () => {
+    setShowResumePrompt(false);
+    // Progress already loaded in state
+  };
+
+  const handleStartFresh = () => {
+    setShowResumePrompt(false);
+    // Clear saved progress
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.warn('Failed to clear saved progress:', e);
+    }
+    // Reset to defaults
+    setResponses(new Array(TOTAL_SCENARIOS).fill(0.5));
+    setConfidenceScores(new Array(TOTAL_SCENARIOS).fill(0.5));
+    setBirthdate('');
+    setName('');
+    setCurrentChapterIndex(0);
+    setCurrentScenarioIndex(0);
+    setBadges([]);
+  };
+
+  // Memoize progress calculations
+  const progress = useMemo(() => ((currentChapterIndex + 1) / chapters.length) * 100, [currentChapterIndex, chapters.length]);
+  const chapterProgress = useMemo(() => 
+    currentScenarios.length > 0 
+      ? ((currentScenarioIndex + 1) / currentScenarios.length) * 100 
+      : 0,
+    [currentScenarios.length, currentScenarioIndex]
+  );
+  const allAnswered = useMemo(() => responses.every(r => r !== 0.5), [responses]);
+  const isLastScenario = useMemo(() => 
+    currentChapterIndex === chapters.length - 1 && 
+    currentScenarioIndex === currentScenarios.length - 1,
+    [currentChapterIndex, chapters.length, currentScenarioIndex, currentScenarios.length]
+  );
   
   // Calculate completion status for user feedback
-  const answeredCount = responses.filter(r => r !== 0.5).length;
-  const remainingScenarios = TOTAL_SCENARIOS - answeredCount;
-  const canComplete = allAnswered && birthdate;
+  const answeredCount = useMemo(() => responses.filter(r => r !== 0.5).length, [responses]);
+  const remainingScenarios = useMemo(() => TOTAL_SCENARIOS - answeredCount, [TOTAL_SCENARIOS, answeredCount]);
+  // Birthdate is now optional - only require all scenarios to be answered
+  const canComplete = useMemo(() => allAnswered, [allAnswered]);
 
   if (!currentScenario) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 transition-colors duration-200">
       <div className="max-w-4xl mx-auto">
+        {/* Resume Prompt */}
+        {showResumePrompt && (
+          <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  📍 Resume Your Journey?
+                </h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+                  We found saved progress from a previous session. You were at Chapter {currentChapterIndex + 1}, Scenario {currentScenarioIndex + 1}.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleResume}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Resume Where I Left Off
+                  </button>
+                  <button
+                    onClick={handleStartFresh}
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Start Fresh
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowResumePrompt(false)}
+                className="ml-4 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                aria-label="Close resume prompt"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -208,16 +374,21 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Birthdate (for astrology/numerology)
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Birthdate <span className="text-gray-500 dark:text-gray-400 text-xs">(optional - for astrology/numerology)</span>
               </label>
               <input
                 type="date"
                 value={birthdate}
                 onChange={(e) => setBirthdate(e.target.value)}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                placeholder="Select birthdate for enhanced features"
               />
+              {!birthdate && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  💡 Adding your birthdate enables astrology and numerology compatibility features
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -316,9 +487,9 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
                       ⚠️ {remainingScenarios} scenario{remainingScenarios !== 1 ? 's' : ''} remaining
                     </p>
                   )}
-                  {!birthdate && (
-                    <p>
-                      ⚠️ Please enter your birthdate to complete
+                  {!birthdate && allAnswered && (
+                    <p className="text-yellow-600 dark:text-yellow-400">
+                      💡 Birthdate optional - add for astrology/numerology features
                     </p>
                   )}
                 </div>

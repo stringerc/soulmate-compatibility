@@ -1,75 +1,37 @@
-# Deployment Status
+# Deployment Status - Latest Fix
 
-## ✅ Completed
+## Current Configuration
 
-1. **GitHub Repository**: Created and code pushed
-   - Repository: https://github.com/stringerc/soulmate-compatibility
-   - Status: ✅ Code pushed successfully
+```yaml
+rootDir: web_app/backend
+buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+```
 
-2. **Vercel Frontend Project**: Created and configured
-   - Project: soulmate-compatibility
-   - Root Directory: web_app/frontend
-   - Framework: Next.js
-   - Environment Variables: NEXT_PUBLIC_API_URL configured
-   - Status: ⏳ Deployment in progress
+## What Should Happen Now
 
-## ⏳ In Progress
+1. **rootDir** tells Render to run ALL commands from `web_app/backend/`
+2. **buildCommand** runs from `web_app/backend/` so `requirements.txt` should be found
+3. **startCommand** runs from `web_app/backend/` so `app.py` should be found
 
-3. **Vercel Deployment**: Frontend deployment triggered
-   - Status: Building and deploying...
+## Expected Behavior
 
-## 📋 Pending
+When Render builds:
+- It should change to `web_app/backend/` directory
+- Run `pip install --upgrade pip`
+- Run `pip install -r requirements.txt` (file should be found)
+- Start with `uvicorn app:app` (app.py should be found)
 
-4. **Render Backend**: Needs API key
-   - Service: soulmate-api
-   - Status: Waiting for Render API key
-   - Action Required: Provide Render API key to connect
+## If Still Failing
 
-5. **Domain Configuration**: soulmate.syncscript.app
-   - Status: Pending deployment completion
-   - Action: Configure custom domain after deployments complete
+If Render still can't find `requirements.txt`, the issue might be:
+1. Render not respecting `rootDir` properly
+2. Need to use Dockerfile instead
+3. Need to create a build script
 
-## 🔧 Manual Steps Required
+## Next Steps After Successful Build
 
-### Render Backend Setup
-
-1. Go to Render Dashboard: https://dashboard.render.com
-2. Create new Web Service
-3. Connect GitHub repository: `stringerc/soulmate-compatibility`
-4. Configure:
-   - **Name**: soulmate-api
-   - **Root Directory**: `web_app/backend`
-   - **Environment**: Python 3
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. Add Environment Variable:
-   - `PORT`: (auto-set by Render)
-6. Deploy
-
-### Domain Configuration
-
-After both deployments complete:
-
-1. **Vercel**:
-   - Go to Project Settings → Domains
-   - Add: `soulmate.syncscript.app`
-   - Configure DNS as instructed
-
-2. **Render**:
-   - Go to Service Settings → Custom Domains
-   - Add: `api.soulmate.syncscript.app` (or subdomain of choice)
-   - Configure DNS as instructed
-
-## 📝 Next Steps
-
-1. Wait for Vercel deployment to complete
-2. Provide Render API key OR manually set up Render service
-3. Configure custom domain: soulmate.syncscript.app
-4. Test the application end-to-end
-
-## 🔗 Links
-
-- **GitHub**: https://github.com/stringerc/soulmate-compatibility
-- **Vercel Dashboard**: https://vercel.com/dashboard
-- **Render Dashboard**: https://dashboard.render.com
-
+1. Verify health endpoint: `https://soulmate-b2b-api.onrender.com/health`
+2. Check database connection
+3. Test API endpoints
+4. Update frontend to use new API URL

@@ -12,10 +12,19 @@ interface SendEmailOptions {
   from?: string;
 }
 
+interface EmailResult {
+  success: boolean;
+  message?: string;
+  emailId?: string;
+  errorDetails?: any;
+  statusCode?: number;
+  error?: string;
+}
+
 /**
  * Send email using Resend API
  */
-export async function sendEmail({ to, subject, html, from }: SendEmailOptions): Promise<{ success: boolean; message?: string }> {
+export async function sendEmail({ to, subject, html, from }: SendEmailOptions): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = from || process.env.RESEND_FROM_EMAIL || 'noreply@soulmates.syncscript.app';
 
@@ -96,7 +105,7 @@ export async function sendEmail({ to, subject, html, from }: SendEmailOptions): 
 /**
  * Send magic link email
  */
-export async function sendMagicLinkEmail(email: string, magicLinkUrl: string): Promise<{ success: boolean; message?: string }> {
+export async function sendMagicLinkEmail(email: string, magicLinkUrl: string): Promise<EmailResult> {
   const html = `
     <!DOCTYPE html>
     <html>

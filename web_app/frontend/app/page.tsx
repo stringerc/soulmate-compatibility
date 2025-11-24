@@ -4,6 +4,7 @@ import { useState } from 'react';
 import StoryQuest from '@/components/StoryQuest';
 import ShareableResults from '@/components/ShareableResults';
 import ThemeToggle from '@/components/ThemeToggle';
+import FeedbackForm from '@/components/FeedbackForm';
 
 export default function Home() {
   const [person1Traits, setPerson1Traits] = useState<number[] | null>(null);
@@ -50,6 +51,17 @@ export default function Home() {
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
+
+      {/* Feedback Form */}
+      <FeedbackForm
+        context={{
+          page: step,
+          step: step === 'results' ? 'results' : step === 'person2' ? 'person2' : 'person1',
+          compatibilityScore: step === 'results' && person1Traits && person2Traits
+            ? 0.85 // Calculate actual score if needed
+            : undefined,
+        }}
+      />
 
       {step === 'person1' && (
         <StoryQuest

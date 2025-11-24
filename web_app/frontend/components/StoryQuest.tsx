@@ -125,19 +125,39 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     const choice = currentScenario.choices[choiceIndex];
     setSelectedChoice(choiceIndex);
     
-    // Update response
+    // Update response - ensure array is correct size
     const newResponses = [...responses];
-    newResponses[currentScenario.index] = choice.value;
-    setResponses(newResponses);
+    // Ensure array is the right size
+    while (newResponses.length < TOTAL_SCENARIOS) {
+      newResponses.push(0.5);
+    }
+    // Update the specific scenario response
+    if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+      newResponses[currentScenario.index] = choice.value;
+      setResponses(newResponses);
+    } else {
+      console.error(`Invalid scenario index: ${currentScenario.index} (should be 0-${TOTAL_SCENARIOS - 1})`);
+    }
     
     // Show confidence slider
     setShowConfidence(true);
   };
 
   const handleConfidenceChange = (confidence: number) => {
+    if (!currentScenario) return;
+    
     const newConfidence = [...confidenceScores];
-    newConfidence[currentScenario.index] = confidence;
-    setConfidenceScores(newConfidence);
+    // Ensure array is the right size
+    while (newConfidence.length < TOTAL_SCENARIOS) {
+      newConfidence.push(0.5);
+    }
+    // Update the specific scenario confidence
+    if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+      newConfidence[currentScenario.index] = confidence;
+      setConfidenceScores(newConfidence);
+    } else {
+      console.error(`Invalid scenario index for confidence: ${currentScenario.index}`);
+    }
   };
 
   const handleNext = () => {
@@ -254,7 +274,20 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       : 0,
     [currentScenarios.length, currentScenarioIndex]
   );
-  const allAnswered = useMemo(() => responses.every(r => r !== 0.5), [responses]);
+  // More robust completion checking
+  const answeredCount = useMemo(() => {
+    return responses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
+  }, [responses]);
+  
+  const allAnswered = useMemo(() => {
+    // Check that we have exactly TOTAL_SCENARIOS responses and all are answered
+    if (responses.length !== TOTAL_SCENARIOS) {
+      console.warn(`Response array length mismatch: ${responses.length} vs ${TOTAL_SCENARIOS}`);
+      return false;
+    }
+    return answeredCount === TOTAL_SCENARIOS;
+  }, [responses, answeredCount, TOTAL_SCENARIOS]);
+  
   const isLastScenario = useMemo(() => 
     currentChapterIndex === chapters.length - 1 && 
     currentScenarioIndex === currentScenarios.length - 1,
@@ -262,10 +295,15 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   );
   
   // Calculate completion status for user feedback
-  const answeredCount = useMemo(() => responses.filter(r => r !== 0.5).length, [responses]);
-  const remainingScenarios = useMemo(() => TOTAL_SCENARIOS - answeredCount, [TOTAL_SCENARIOS, answeredCount]);
+  const remainingScenarios = useMemo(() => {
+    const remaining = TOTAL_SCENARIOS - answeredCount;
+    return Math.max(0, remaining); // Ensure non-negative
+  }, [TOTAL_SCENARIOS, answeredCount]);
+  
   // Birthdate is now optional - only require all scenarios to be answered
-  const canComplete = useMemo(() => allAnswered, [allAnswered]);
+  const canComplete = useMemo(() => {
+    return allAnswered && responses.length === TOTAL_SCENARIOS;
+  }, [allAnswered, responses.length, TOTAL_SCENARIOS]);
 
   if (!currentScenario) return null;
 

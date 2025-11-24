@@ -166,34 +166,52 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   };
 
   const handleNext = () => {
-    if (!currentScenario) return;
+    if (!currentScenario || selectedChoice === null) return;
     
     // CRITICAL FIX: Ensure current response is saved before navigating
-    if (selectedChoice !== null) {
-      const choice = currentScenario.choices[selectedChoice];
-      const newResponses = [...responses];
-      // Ensure array is the right size
-      while (newResponses.length < TOTAL_SCENARIOS) {
-        newResponses.push(0.5);
+    const choice = currentScenario.choices[selectedChoice];
+    const newResponses = [...responses];
+    // Ensure array is the right size
+    while (newResponses.length < TOTAL_SCENARIOS) {
+      newResponses.push(0.5);
+    }
+    // Save the current response
+    if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+      newResponses[currentScenario.index] = choice.value;
+      setResponses(newResponses);
+    }
+    
+    // Also ensure confidence is saved (use current value or default to 0.5)
+    const newConfidence = [...confidenceScores];
+    while (newConfidence.length < TOTAL_SCENARIOS) {
+      newConfidence.push(0.5);
+    }
+    if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+      // Use current confidence value if set, otherwise keep 0.5
+      const currentConfidence = confidenceScores[currentScenario.index];
+      if (currentConfidence !== undefined && currentConfidence !== 0.5) {
+        newConfidence[currentScenario.index] = currentConfidence;
+      } else {
+        newConfidence[currentScenario.index] = 0.5; // Default confidence
       }
-      // Save the current response
-      if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
-        newResponses[currentScenario.index] = choice.value;
-        setResponses(newResponses);
-      }
-      
-      // Also ensure confidence is saved (use current value or default to 0.5)
-      const newConfidence = [...confidenceScores];
-      while (newConfidence.length < TOTAL_SCENARIOS) {
-        newConfidence.push(0.5);
-      }
-      if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
-        // Use current confidence or keep existing if already set
-        if (newConfidence[currentScenario.index] === 0.5 && showConfidence) {
-          // Confidence was shown but might not be set, keep 0.5 as default
-        }
-        setConfidenceScores(newConfidence);
-      }
+      setConfidenceScores(newConfidence);
+    }
+    
+    // CRITICAL FIX: Save progress immediately before navigation
+    try {
+      const progressData = {
+        responses: newResponses,
+        confidenceScores: newConfidence,
+        birthdate,
+        name,
+        currentChapterIndex,
+        currentScenarioIndex,
+        badges,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+    } catch (e) {
+      console.warn('Failed to save progress:', e);
     }
     
     trackButtonClick('Continue Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);

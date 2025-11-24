@@ -3,7 +3,7 @@ Stripe Webhook Handler
 Handles Stripe billing events for partner subscriptions
 """
 
-from fastapi import APIRouter, Request, HTTPException, Header
+from fastapi import APIRouter, Request, HTTPException, Header, Depends
 from pydantic import BaseModel
 from typing import Optional
 import stripe

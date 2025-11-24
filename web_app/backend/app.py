@@ -57,6 +57,14 @@ app.add_middleware(
 app.include_router(compatibility.router)
 app.include_router(partners.router)
 
+# Import and include analytics and auth routers
+try:
+    from api.v1 import analytics, auth as auth_router
+    app.include_router(analytics.router)
+    app.include_router(auth_router.router)
+except ImportError:
+    print("Warning: Analytics or auth modules not available")
+
 
 # Health check endpoint
 @app.get("/")

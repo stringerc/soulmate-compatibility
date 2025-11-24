@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { magicLinks } from '../magic-link/route';
+import { magicLinks } from '@/lib/magicLinks';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';

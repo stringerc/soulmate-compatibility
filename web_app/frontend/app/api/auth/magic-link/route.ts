@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { magicLinks } from '@/lib/magicLinks';
 
 /**
  * Magic Link Authentication API
  * Research: Magic links preferred by 67% of users (Auth0, 2024)
  */
-
-// In-memory store for magic links (in production, use Redis or database)
-const magicLinks = new Map<string, { email: string; expiresAt: number }>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,6 +47,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Export magic links map for verification route
-export { magicLinks };
 

@@ -295,10 +295,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         });
         // Update state and continue
         setResponses(finalResponses);
-          setResponses(finalResponses);
-        } else {
-          return;
-        }
+        // Continue with completion below
       } else {
         alert(
           `Please answer all ${TOTAL_SCENARIOS} scenarios before completing.\n\n` +

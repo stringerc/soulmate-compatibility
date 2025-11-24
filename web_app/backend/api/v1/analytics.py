@@ -14,6 +14,7 @@ from database.connection import get_db
 from database.models import APIUsage, Partner
 from api.auth import verify_api_key_dependency
 from api.analytics import get_usage_stats
+from api.auth import verify_api_key_dependency
 
 router = APIRouter(prefix="/api/v1/partners", tags=["analytics"])
 

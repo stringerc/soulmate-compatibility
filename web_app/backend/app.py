@@ -62,8 +62,15 @@ try:
     from api.v1 import analytics, auth as auth_router
     app.include_router(analytics.router)
     app.include_router(auth_router.router)
-except ImportError:
-    print("Warning: Analytics or auth modules not available")
+except ImportError as e:
+    print(f"Warning: Analytics or auth modules not available: {e}")
+
+# Import Stripe webhook handler (optional)
+try:
+    from api.v1 import stripe_webhook
+    app.include_router(stripe_webhook.router)
+except ImportError as e:
+    print(f"Warning: Stripe webhook module not available: {e}")
 
 
 # Health check endpoint

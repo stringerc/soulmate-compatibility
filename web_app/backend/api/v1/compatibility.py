@@ -53,7 +53,7 @@ except ImportError:
         
         @property
         def stability(self):
-            m = self.mean == 0:
+            if self.mean == 0:
                 return 1.0
             variance = sum((x - self.mean) ** 2 for x in self.metrics) / len(self.metrics)
             return max(0.0, min(1.0, 1.0 - variance))

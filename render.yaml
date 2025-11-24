@@ -6,7 +6,6 @@ services:
     plan: free
     buildCommand: cd web_app/backend && pip install --upgrade pip && pip install -r requirements.txt
     startCommand: cd web_app/backend && uvicorn app:app --host 0.0.0.0 --port $PORT
-    workingDir: web_app/backend
     envVars:
       - key: ENVIRONMENT
         value: production

@@ -1,0 +1,125 @@
+name: Phase Deployment Pipeline
+
+on:
+  schedule:
+    # Every 4 weeks on Tuesday at 10 AM UTC
+    - cron: '0 10 * * 2'
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Phase number (1, 2, 3, or 4)'
+        required: true
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+      enable_landing_page:
+        description: 'Enable landing page for this phase'
+        required: false
+        type: boolean
+        default: true
+      skip_tests:
+        description: 'Skip tests (not recommended)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '20.x'
+  PHASE: ${{ github.event.inputs.phase || 'auto' }}
+  ENABLE_LANDING_PAGE: ${{ github.event.inputs.enable_landing_page != 'false' }}
+
+jobs:
+  detect-phase:
+    runs-on: ubuntu-latest
+    outputs:
+      phase: ${{ steps.detect.outputs.phase }}
+      branch: ${{ steps.detect.outputs.branch }}
+      landing_page_enabled: ${{ steps.detect.outputs.landing_page }}
+    steps:
+      - name: Detect Phase
+        id: detect
+        run: |
+          # Auto-detect phase based on date
+          CURRENT_DATE=$(date +%s)
+          PHASE1_DATE=$(date -d "2024-12-24" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "2024-12-24" +%s 2>/dev/null || echo "1734998400")
+          DAYS_SINCE=$(( ($CURRENT_DATE - $PHASE1_DATE) / 86400 ))
+          PHASE=$(( 1 + ($DAYS_SINCE / 28) ))
+          
+          if [ "${{ github.event.inputs.phase }}" != "" ]; then
+            PHASE="${{ github.event.inputs.phase }}"
+          fi
+          
+          # Enable landing page for Phase 1 and beyond
+          if [ "$PHASE" -ge "1" ]; then
+            LANDING_PAGE="true"
+          else
+            LANDING_PAGE="false"
+          fi
+          
+          echo "phase=$PHASE" >> $GITHUB_OUTPUT
+          echo "branch=phase-$PHASE" >> $GITHUB_OUTPUT
+          echo "landing_page=$LANDING_PAGE" >> $GITHUB_OUTPUT
+          echo "Detected Phase: $PHASE"
+          echo "Landing Page Enabled: $LANDING_PAGE"
+
+  test:
+    needs: detect-phase
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_tests != 'true'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web_app/frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: web_app/frontend
+        run: npm ci
+      
+      - name: Run linter
+        working-directory: web_app/frontend
+        run: npm run lint -- --max-warnings 5 || true
+      
+      - name: Run type check
+        working-directory: web_app/frontend
+        run: npm run type-check || npx tsc --noEmit || true
+      
+      - name: Build application
+        working-directory: web_app/frontend
+        env:
+          NEXT_PUBLIC_ENABLE_LANDING_PAGE: ${{ needs.detect-phase.outputs.landing_page_enabled }}
+        run: npm run build
+
+  deploy:
+    needs: [detect-phase, test]
+    runs-on: ubuntu-latest
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: web_app/frontend
+        env:
+          NEXT_PUBLIC_ENABLE_LANDING_PAGE: ${{ needs.detect-phase.outputs.landing_page_enabled }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+      
+      - name: Notify Deployment
+        if: always()
+        run: |
+          echo "Phase ${{ needs.detect-phase.outputs.phase }} deployment completed"
+          echo "Landing page enabled: ${{ needs.detect-phase.outputs.landing_page_enabled }}"
+

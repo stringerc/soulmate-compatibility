@@ -35,9 +35,13 @@ export const initGA = () => {
   document.head.appendChild(script1);
 
   // Initialize dataLayer
-  window.dataLayer = window.dataLayer || [];
+  if (!window.dataLayer) {
+    window.dataLayer = [];
+  }
   window.gtag = function(...args: any[]) {
-    window.dataLayer.push(args);
+    if (window.dataLayer) {
+      window.dataLayer.push(args);
+    }
   };
 
   window.gtag('js', new Date());

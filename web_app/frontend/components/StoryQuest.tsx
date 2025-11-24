@@ -117,7 +117,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         trackDropOff(personNumber, currentChapterIndex, currentScenarioIndex, 'component_unmount');
       }
     };
-  }, []);
+  }, [responses, TOTAL_SCENARIOS, currentChapterIndex, currentScenarioIndex, personNumber]);
 
   const handleChoiceSelect = (choiceIndex: number) => {
     if (!currentScenario) return;

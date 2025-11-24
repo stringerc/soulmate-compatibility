@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import StoryQuest from '@/components/StoryQuest';
 import ShareableResults from '@/components/ShareableResults';
+import LandingPage from '@/components/LandingPage';
 import ThemeToggle from '@/components/ThemeToggle';
 import FeedbackForm from '@/components/FeedbackForm';
 
@@ -15,7 +16,17 @@ export default function Home() {
   const [person2Name, setPerson2Name] = useState<string>('');
   const [person1Confidence, setPerson1Confidence] = useState<number[]>([]);
   const [person2Confidence, setPerson2Confidence] = useState<number[]>([]);
-  const [step, setStep] = useState<'person1' | 'person2' | 'results'>('person1');
+  const [step, setStep] = useState<'landing' | 'person1' | 'person2' | 'results'>('landing');
+  
+  // Check if landing page should be shown (feature flag)
+  const showLandingPage = process.env.NEXT_PUBLIC_ENABLE_LANDING_PAGE !== 'false';
+  
+  useEffect(() => {
+    // If landing page is disabled or user has already started, skip landing
+    if (!showLandingPage || person1Traits) {
+      setStep('person1');
+    }
+  }, [showLandingPage, person1Traits]);
 
   const handlePerson1Complete = (traits: number[], birthdate: string, name: string, confidence: number[]) => {
     setPerson1Traits(traits);
@@ -42,6 +53,10 @@ export default function Home() {
     setPerson2Name('');
     setPerson1Confidence([]);
     setPerson2Confidence([]);
+    setStep(showLandingPage ? 'landing' : 'person1');
+  };
+
+  const handleStartTest = () => {
     setStep('person1');
   };
 
@@ -56,12 +71,16 @@ export default function Home() {
       <FeedbackForm
         context={{
           page: step,
-          step: step === 'results' ? 'results' : step === 'person2' ? 'person2' : 'person1',
+          step: step === 'results' ? 'results' : step === 'person2' ? 'person2' : step === 'person1' ? 'person1' : 'landing',
           compatibilityScore: step === 'results' && person1Traits && person2Traits
             ? 0.85 // Calculate actual score if needed
             : undefined,
         }}
       />
+
+      {step === 'landing' && showLandingPage && (
+        <LandingPage onStartTest={handleStartTest} />
+      )}
 
       {step === 'person1' && (
         <StoryQuest

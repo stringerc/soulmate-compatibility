@@ -27,8 +27,10 @@ interface ResultsProps {
 }
 
 export default function Results({ person1, person2, onReset }: ResultsProps) {
-  // Default resonance (neutral)
-  const resonance: ResonanceVector = { metrics: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] };
+  // Default resonance (neutral) - memoized to prevent re-creation
+  const resonance: ResonanceVector = useMemo(() => ({ 
+    metrics: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] 
+  }), []);
 
   const result = useMemo(() => {
     const p1: PersonVector = { traits: person1.traits };

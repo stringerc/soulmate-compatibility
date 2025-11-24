@@ -16,7 +16,7 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
     {
       id: '1',
       question: 'Is this just another zodiac/numerology calculator?',
-      answer: "No! We're fundamentally different. We TEST whether astrology/numerology work before including them. If they don&apos;t improve predictions, we discard them automatically."
+      answer: "No! We&apos;re fundamentally different. We TEST whether astrology/numerology work before including them. If they don&apos;t improve predictions, we discard them automatically."
     },
     {
       id: '2',

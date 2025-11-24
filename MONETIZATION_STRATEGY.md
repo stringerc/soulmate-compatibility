@@ -1,10 +1,27 @@
 # Ethical Monetization Strategy: Sustainable Revenue Without User Exploitation
 
+## ⚠️ STRATEGIC UPDATE: B2B Monetization Recommended
+
+**After in-depth research, we recommend a B2B monetization model that keeps the platform 100% free for users.**
+
+**See `ALTERNATIVE_MONETIZATION_STRATEGY.md` for the recommended approach:**
+- Users never pay (100% free)
+- Revenue from B2B partnerships ($1.5M-$14M/year)
+- API licensing, event sponsorships, data insights
+- Higher revenue potential than user payments
+- Maximum viral growth and user satisfaction
+
+**This document below outlines the user-payment model (freemium) as an alternative option.**
+
+---
+
 ## Executive Summary
 
 This guide provides a research-backed, ethical monetization strategy for the Soulmate Compatibility Platform. The approach prioritizes user value, transparency, and sustainable revenue generation while covering operational costs (bills, attorney fees) without exploiting users.
 
 **Core Principle**: Monetize value-added features, not core functionality. Users should never feel "gouged" or blocked from essential features.
+
+**⚠️ Note**: After research, B2B monetization (see `ALTERNATIVE_MONETIZATION_STRATEGY.md`) is recommended as the primary strategy, with freemium as a secondary option.
 
 ---
 

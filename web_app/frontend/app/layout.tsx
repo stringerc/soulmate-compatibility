@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import ThemeScript from '@/components/ThemeScript'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
 
 export const metadata: Metadata = {
   title: 'Soulmate Compatibility Calculator | 32D Personality Analysis',
@@ -69,6 +70,7 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-200">
+        <GoogleAnalytics />
         {children}
       </body>
     </html>

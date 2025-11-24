@@ -711,7 +711,10 @@ Trust Reminders:
 
 *This document is a living strategy and will be updated based on user feedback, A/B test results, and performance data.*
 
+**⚠️ IMPORTANT**: See `LANDING_PAGE_STRATEGY_ENHANCED.md` for research-optimized improvements targeting 6-8% conversion rates (top 10% performance).
+
 **Document Version**: 1.0
 **Last Updated**: December 24, 2024
 **Next Review**: January 7, 2025
+**Enhanced Version**: See `LANDING_PAGE_STRATEGY_ENHANCED.md` for latest research (2024-2025)
 

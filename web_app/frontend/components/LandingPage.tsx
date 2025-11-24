@@ -41,14 +41,27 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
     try {
       const result = await requestMagicLink(loginEmail);
       if (result.success) {
-        setLoginMessage('Check your email for a magic link!');
-        setShowLoginModal(false);
-        setLoginEmail('');
+        if (result.devLink) {
+          // Development mode - show link
+          setLoginMessage(`Magic link generated! Click here: ${result.devLink}`);
+          // Auto-open in new tab for convenience
+          if (result.devLink) {
+            window.open(result.devLink, '_blank');
+          }
+        } else {
+          setLoginMessage('Magic link sent! Check your email (including spam folder).');
+        }
+        // Don't close modal immediately - let user see the message
+        setTimeout(() => {
+          setShowLoginModal(false);
+          setLoginEmail('');
+        }, 3000);
       } else {
-        setLoginMessage(result.message || 'Failed to send magic link');
+        setLoginMessage(result.message || 'Failed to send magic link. Please try again.');
       }
     } catch (error) {
-      setLoginMessage('An error occurred. Please try again.');
+      console.error('Login error:', error);
+      setLoginMessage('An error occurred. Please try again or check your connection.');
     } finally {
       setIsLoading(false);
     }
@@ -147,7 +160,7 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
 
       {/* Login Modal */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">Sign In</h3>

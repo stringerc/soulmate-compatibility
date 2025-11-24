@@ -30,23 +30,44 @@ export async function POST(request: NextRequest) {
     magicLinks.set(token, { email, expiresAt });
 
     // Generate magic link URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+      'https://soulmates.syncscript.app';
     const magicLinkUrl = `${appUrl}/api/auth/verify-magic-link?token=${token}`;
 
     // Send magic link email via Resend
     const emailResult = await sendMagicLinkEmail(email, magicLinkUrl);
     
-    if (!emailResult.success && process.env.NODE_ENV === 'development') {
-      // In development, log the magic link if email fails
-      console.log(`[DEV] Magic link for ${email}: ${magicLinkUrl}`);
+    // Enhanced logging for debugging
+    console.log('[MAGIC LINK]', {
+      email,
+      appUrl,
+      magicLinkUrl: magicLinkUrl.substring(0, 50) + '...',
+      emailSuccess: emailResult.success,
+      emailMessage: emailResult.message,
+      resendConfigured: !!process.env.RESEND_API_KEY,
+    });
+    
+    if (!emailResult.success) {
+      // In development or if email fails, return the link in response
+      if (process.env.NODE_ENV === 'development' || !process.env.RESEND_API_KEY) {
+        console.warn(`[MAGIC LINK] Email failed, returning link in response: ${magicLinkUrl}`);
+        return NextResponse.json({
+          success: true,
+          message: 'Magic link generated! (Email service not configured - check console for link)',
+          devLink: magicLinkUrl,
+          warning: 'Email service not configured. Use devLink to test.',
+        });
+      }
+      
+      // In production, still return success but log the error
+      console.error('[MAGIC LINK] Email delivery failed:', emailResult.message);
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Magic link sent! Check your email.',
-      // Remove in production - only for development
+      message: 'Magic link sent! Check your email (including spam folder).',
+      // Include dev link in development for testing
       devLink: process.env.NODE_ENV === 'development' ? magicLinkUrl : undefined,
     });
   } catch (error) {

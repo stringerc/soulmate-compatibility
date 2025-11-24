@@ -82,8 +82,8 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
-      {/* Theme Toggle - Fixed position */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Theme Toggle - Fixed position (lower z-index to not block modals) */}
+      <div className="fixed top-4 right-4 z-30">
         <ThemeToggle />
       </div>
 

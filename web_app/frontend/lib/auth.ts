@@ -51,7 +51,7 @@ export const isAuthenticated = async (): Promise<boolean> => {
 /**
  * Request magic link
  */
-export const requestMagicLink = async (email: string): Promise<{ success: boolean; message: string }> => {
+export const requestMagicLink = async (email: string): Promise<{ success: boolean; message: string; devLink?: string }> => {
   try {
     const response = await fetch('/api/auth/magic-link', {
       method: 'POST',
@@ -60,11 +60,18 @@ export const requestMagicLink = async (email: string): Promise<{ success: boolea
     });
     
     const data = await response.json();
+    
+    // Log for debugging
+    if (data.devLink) {
+      console.log('[AUTH] Magic link (dev mode):', data.devLink);
+    }
+    
     return data;
   } catch (error) {
+    console.error('[AUTH] Magic link request failed:', error);
     return {
       success: false,
-      message: 'Failed to send magic link. Please try again.',
+      message: 'Failed to send magic link. Please check your connection and try again.',
     };
   }
 };

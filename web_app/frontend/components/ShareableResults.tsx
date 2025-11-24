@@ -31,14 +31,23 @@ interface ShareableResultsProps {
 export default function ShareableResults({ person1, person2, onReset }: ShareableResultsProps) {
   const [copied, setCopied] = useState(false);
   const [userAuthenticated, setUserAuthenticated] = useState(false);
+  const [saveResultsError, setSaveResultsError] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
+    // Log for debugging
+    console.log('[ShareableResults] Component mounted, rendering SaveResults');
   }, []);
 
   const checkAuth = async () => {
-    const auth = await isAuthenticated();
-    setUserAuthenticated(auth);
+    try {
+      const auth = await isAuthenticated();
+      setUserAuthenticated(auth);
+      console.log('[ShareableResults] Auth check:', auth);
+    } catch (error) {
+      console.error('[ShareableResults] Auth check error:', error);
+      setSaveResultsError('Authentication check failed');
+    }
   };
 
   const result = useMemo(() => {
@@ -278,19 +287,25 @@ export default function ShareableResults({ person1, person2, onReset }: Shareabl
             Save your compatibility results to access them from any device. No password required - just your email!
           </p>
           <div className="flex justify-center">
-            <SaveResults
-              person1Data={{
-                traits: person1.traits,
-                birthdate: person1.birthdate,
-                name: person1.name,
-              }}
-              person2Data={{
-                traits: person2.traits,
-                birthdate: person2.birthdate,
-                name: person2.name,
-              }}
-              compatibilityScore={result.compatibility.s_hat}
-            />
+            {saveResultsError ? (
+              <div className="text-red-600 dark:text-red-400 text-sm">
+                {saveResultsError}
+              </div>
+            ) : (
+              <SaveResults
+                person1Data={{
+                  traits: person1.traits,
+                  birthdate: person1.birthdate,
+                  name: person1.name,
+                }}
+                person2Data={{
+                  traits: person2.traits,
+                  birthdate: person2.birthdate,
+                  name: person2.name,
+                }}
+                compatibilityScore={result.compatibility.s_hat}
+              />
+            )}
           </div>
         </div>
 

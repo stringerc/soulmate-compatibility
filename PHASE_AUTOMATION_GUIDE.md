@@ -737,10 +737,12 @@ export async function GET() {
 - [x] Email service integration (Resend)
 
 **✅ Recent Bug Fixes (Dec 24, 2024):**
-- [x] Optional login visibility fixed (SaveResults now displayed)
-- [x] Story completion bug fixed (validation logic improved)
-- [x] Progress saving improved (immediate localStorage save)
-- [x] Auto-complete for edge cases (29+ scenarios answered)
+- [x] Optional login visibility fixed (SaveResults now displayed with error handling)
+- [x] Story completion bug fixed (use local variables for validation, not async state)
+- [x] Auto-complete for 30+ scenarios (within 2 of total)
+- [x] Progress saving improved (immediate localStorage save before navigation)
+- [x] Form accessibility fixed (id/name/htmlFor/aria-labels - WCAG AA compliant)
+- [x] Confidence scores fixed (proper saving and validation)
 
 ### Phase 2 Deployment (Dec 24, 2024 - Jan 21, 2025)
 

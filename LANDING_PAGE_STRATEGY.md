@@ -737,9 +737,11 @@ Trust Reminders:
 - ✅ **Bug Fixes**: Optional login visibility, story completion
 
 **Recent Bug Fixes** (Dec 24, 2024):
-- ✅ **Optional Login Visibility**: SaveResults component now prominently displayed on results page
-- ✅ **Story Completion Bug**: Fixed validation logic, auto-complete for edge cases
-- ✅ **Progress Saving**: Improved localStorage persistence
+- ✅ **Optional Login Visibility**: SaveResults component now prominently displayed on results page with error handling
+- ✅ **Story Completion Bug**: Fixed validation logic using local variables (not async state), auto-complete for 30+ scenarios
+- ✅ **Progress Saving**: Improved localStorage persistence before navigation
+- ✅ **Form Accessibility**: Added id/name attributes, htmlFor labels, aria-labels (WCAG AA compliant)
+- ✅ **Confidence Scores**: Fixed confidence score saving and validation
 
 **URL**: https://soulmates.syncscript.app
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useId } from 'react';
 import { STORY_SCENARIOS, CHAPTER_THEMES, getCategoryChapters, getScenariosForChapter } from '@/lib/storyScenarios';
 import { Sparkles, Heart, Trophy, Star, CheckCircle2 } from 'lucide-react';
 import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOff, trackButtonClick } from '@/lib/analytics';
@@ -21,6 +21,11 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   // Use actual scenario count from STORY_SCENARIOS
   const TOTAL_SCENARIOS = STORY_SCENARIOS.length;
   const STORAGE_KEY = `soulmate-progress-${personNumber}`;
+  
+  // Generate unique IDs for form accessibility
+  const nameInputId = useId();
+  const birthdateInputId = useId();
+  const confidenceSliderId = useId();
   
   // Load saved progress from localStorage
   const loadSavedProgress = () => {
@@ -331,7 +336,8 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       console.warn('Failed to clear saved progress:', e);
     }
     
-    onComplete(finalResponses, birthdate || '', name || `Person ${personNumber}`, confidenceScores);
+    // Use final arrays for completion
+    onComplete(finalResponses, birthdate || '', name || `Person ${personNumber}`, finalConfidence);
   };
 
   const handleResume = () => {
@@ -491,27 +497,33 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor={nameInputId} className="block text-sm font-medium text-gray-700 mb-2">
                 Name (optional)
               </label>
               <input
+                id={nameInputId}
+                name={`person-${personNumber}-name`}
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={`Person ${personNumber}`}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                aria-label={`Name for Person ${personNumber} (optional)`}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor={birthdateInputId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Birthdate <span className="text-gray-500 dark:text-gray-400 text-xs">(optional - for astrology/numerology)</span>
               </label>
               <input
+                id={birthdateInputId}
+                name={`person-${personNumber}-birthdate`}
                 type="date"
                 value={birthdate}
                 onChange={(e) => setBirthdate(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
                 placeholder="Select birthdate for enhanced features"
+                aria-label={`Birthdate for Person ${personNumber} (optional - enables astrology and numerology features)`}
               />
               {!birthdate && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -568,17 +580,23 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
             {/* Confidence Slider */}
             {showConfidence && selectedChoice !== null && (
               <div className="bg-white/20 backdrop-blur-md rounded-xl p-6 border border-white/30 shadow-lg relative z-10">
-                <label className="block text-sm font-medium mb-3 drop-shadow-sm">
-                  How certain are you about this choice? ({Math.round(confidenceScores[currentScenario.index] * 100)}%)
+                <label htmlFor={confidenceSliderId} className="block text-sm font-medium mb-3 drop-shadow-sm">
+                  How certain are you about this choice? ({Math.round((confidenceScores[currentScenario.index] || 0.5) * 100)}%)
                 </label>
                 <input
+                  id={confidenceSliderId}
+                  name={`confidence-scenario-${currentScenario.index}`}
                   type="range"
                   min="0"
                   max="1"
                   step="0.01"
-                  value={confidenceScores[currentScenario.index]}
+                  value={confidenceScores[currentScenario.index] || 0.5}
                   onChange={(e) => handleConfidenceChange(parseFloat(e.target.value))}
                   className="w-full h-3 bg-white/30 rounded-lg appearance-none cursor-pointer accent-yellow-300 shadow-inner"
+                  aria-label={`Confidence level for this choice: ${Math.round((confidenceScores[currentScenario.index] || 0.5) * 100)}%`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round((confidenceScores[currentScenario.index] || 0.5) * 100)}
                 />
                 <div className="flex justify-between text-xs mt-2 opacity-95 drop-shadow-sm">
                   <span>Not sure</span>

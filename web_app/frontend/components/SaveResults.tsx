@@ -155,16 +155,20 @@ export default function SaveResults({ person1Data, person2Data, compatibilitySco
             ) : (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label htmlFor="save-results-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email Address
                   </label>
                   <input
+                    id="save-results-email"
+                    name="save-results-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     disabled={status === 'sending'}
+                    aria-label="Email address for saving results"
+                    aria-required="true"
                   />
                 </div>
 

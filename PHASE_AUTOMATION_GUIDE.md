@@ -793,6 +793,18 @@ This automation system ensures:
 
 ---
 
+## Related Documentation
+
+- **`MONETIZATION_STRATEGY.md`** - Complete ethical monetization guide
+  - Research-backed freemium model
+  - Premium feature strategy ($4.99-$14.99/month)
+  - Revenue projections ($100K-$400K Year 1)
+  - Implementation code examples
+  - Ethical pricing guidelines
+  - Covers bills and attorney fees without exploiting users
+
+---
+
 **Questions or Issues?**
 - Review GitHub Actions logs
 - Check Vercel deployment dashboard

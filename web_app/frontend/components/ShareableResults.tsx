@@ -269,6 +269,31 @@ export default function ShareableResults({ person1, person2, onReset }: Shareabl
           </div>
         )}
 
+        {/* Save Results - Optional Login */}
+        <div className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-lg shadow-lg p-6 mb-6">
+          <h3 className="text-xl font-semibold mb-4 text-center text-gray-900 dark:text-white">
+            💾 Save Your Results
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4">
+            Save your compatibility results to access them from any device. No password required - just your email!
+          </p>
+          <div className="flex justify-center">
+            <SaveResults
+              person1Data={{
+                traits: person1.traits,
+                birthdate: person1.birthdate,
+                name: person1.name,
+              }}
+              person2Data={{
+                traits: person2.traits,
+                birthdate: person2.birthdate,
+                name: person2.name,
+              }}
+              compatibilityScore={result.compatibility.s_hat}
+            />
+          </div>
+        </div>
+
         {/* Share Actions */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h3 className="text-xl font-semibold mb-4 text-center">Share Your Results</h3>

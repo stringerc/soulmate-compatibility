@@ -256,6 +256,9 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       }
     }
     
+    // CRITICAL FIX: Update state with final responses before validation
+    setResponses(finalResponses);
+    
     // Double-check completion status with better validation
     const answeredCountCheck = finalResponses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
     const allAnsweredCheck = answeredCountCheck === TOTAL_SCENARIOS && finalResponses.length === TOTAL_SCENARIOS;
@@ -284,19 +287,14 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       console.warn('- Selected choice:', selectedChoice);
       console.warn('- Responses:', finalResponses);
       
-      // Offer to complete anyway if user is at last scenario and has answered most
+      // CRITICAL FIX: If user is on last scenario, auto-complete if they've answered most
       if (isLastScenario && answeredCountCheck >= TOTAL_SCENARIOS - 3) {
-        const proceed = confirm(
-          `You've answered ${answeredCountCheck} of ${TOTAL_SCENARIOS} scenarios.\n\n` +
-          `Missing: ${unansweredScenarios.slice(0, 3).join(', ')}${unansweredScenarios.length > 3 ? '...' : ''}\n\n` +
-          `Would you like to complete anyway? Missing scenarios will use default values.`
-        );
-        if (proceed) {
-          // Fill missing with default values and proceed
-          unansweredIndices.forEach(idx => {
-            finalResponses[idx] = 0.5; // Default neutral value
-          });
-          // Update state and continue
+        // Fill missing with default values and proceed automatically
+        unansweredIndices.forEach(idx => {
+          finalResponses[idx] = 0.5; // Default neutral value
+        });
+        // Update state and continue
+        setResponses(finalResponses);
           setResponses(finalResponses);
         } else {
           return;

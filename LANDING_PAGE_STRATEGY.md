@@ -713,7 +713,7 @@ Trust Reminders:
 
 ## 🚀 Deployment Status
 
-### Phase 2 Deployment (Dec 24, 2024) ✅
+### Phase 1 Deployment (Dec 24, 2024) ✅
 
 **Status**: ✅ **DEPLOYED & AUTOMATED**
 
@@ -725,18 +725,30 @@ Trust Reminders:
 - **Environment**: Production
 
 **Features Deployed**:
-- ✅ Magic link authentication
-- ✅ User account creation
-- ✅ Result saving
+- ✅ Interactive Story Quest (7 chapters, 32 scenarios)
+- ✅ Gamification (badges, progress bars)
+- ✅ Shareable Results
+- ✅ Magic link authentication (passwordless) - **NOW VISIBLE**
+- ✅ Optional account creation - **NOW VISIBLE**
+- ✅ Result saving (optional)
 - ✅ Result history
 - ✅ Cross-device access
 - ✅ Landing page integration
+- ✅ **Bug Fixes**: Optional login visibility, story completion
+
+**Recent Bug Fixes** (Dec 24, 2024):
+- ✅ **Optional Login Visibility**: SaveResults component now prominently displayed on results page
+- ✅ **Story Completion Bug**: Fixed validation logic, auto-complete for edge cases
+- ✅ **Progress Saving**: Improved localStorage persistence
 
 **URL**: https://soulmates.syncscript.app
 
 **Next Deployment**: Automatic on next push to `main` branch
 
-**Deployment Documentation**: See `DEPLOYMENT_AUTOMATION_SETUP.md` and `PHASE2_DEPLOYMENT_COMPLETE.md`
+**Deployment Documentation**: 
+- `DEPLOYMENT_AUTOMATION_SETUP.md` - Setup guide
+- `PHASE1_FULL_DEPLOYMENT.md` - Phase 1 details
+- `BUG_FIXES_PHASE1.md` - Recent bug fixes
 
 ---
 

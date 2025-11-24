@@ -719,8 +719,8 @@ export async function GET() {
 - [x] Gamification (badges, progress bars)
 - [x] Confidence Scoring
 - [x] Shareable Results
-- [x] Magic link authentication (passwordless)
-- [x] Optional account creation
+- [x] Magic link authentication (passwordless) - **VISIBLE ON RESULTS PAGE**
+- [x] Optional account creation - **VISIBLE ON RESULTS PAGE**
 - [x] Result saving (optional)
 - [x] Result history page
 - [x] Cross-device access
@@ -735,6 +735,12 @@ export async function GET() {
 - [x] SEO improvements (metadata, sitemap, robots.txt)
 - [x] Automated CI/CD pipeline
 - [x] Email service integration (Resend)
+
+**✅ Recent Bug Fixes (Dec 24, 2024):**
+- [x] Optional login visibility fixed (SaveResults now displayed)
+- [x] Story completion bug fixed (validation logic improved)
+- [x] Progress saving improved (immediate localStorage save)
+- [x] Auto-complete for edge cases (29+ scenarios answered)
 
 ### Phase 2 Deployment (Dec 24, 2024 - Jan 21, 2025)
 

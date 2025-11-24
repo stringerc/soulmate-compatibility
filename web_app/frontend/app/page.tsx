@@ -99,7 +99,31 @@ export default function Home() {
       />
 
       {step === 'landing' && showLandingPage && (
-        <LandingPage onStartTest={handleStartTest} />
+        <LandingPage onStartTest={handleStartTest} onViewHistory={handleViewHistory} />
+      )}
+
+      {step === 'history' && (
+        <div className="container mx-auto px-4 py-16">
+          <ResultHistory
+            onLoadResult={(person1, person2) => {
+              setPerson1Traits(person1.traits);
+              setPerson1Birthdate(person1.birthdate || '');
+              setPerson1Name(person1.name || '');
+              setPerson2Traits(person2.traits);
+              setPerson2Birthdate(person2.birthdate || '');
+              setPerson2Name(person2.name || '');
+              setStep('results');
+            }}
+          />
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => setStep(showLandingPage ? 'landing' : 'person1')}
+              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
       )}
 
       {step === 'person1' && (

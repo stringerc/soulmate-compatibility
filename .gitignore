@@ -37,6 +37,8 @@ build/
 
 # Test results
 *.txt
+!requirements.txt
+!runtime.txt
 test_results.txt
 optimized_results.txt
 fast_results.txt

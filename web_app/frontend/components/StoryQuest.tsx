@@ -163,6 +163,34 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   const handleNext = () => {
     if (!currentScenario) return;
     
+    // CRITICAL FIX: Ensure current response is saved before navigating
+    if (selectedChoice !== null) {
+      const choice = currentScenario.choices[selectedChoice];
+      const newResponses = [...responses];
+      // Ensure array is the right size
+      while (newResponses.length < TOTAL_SCENARIOS) {
+        newResponses.push(0.5);
+      }
+      // Save the current response
+      if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+        newResponses[currentScenario.index] = choice.value;
+        setResponses(newResponses);
+      }
+      
+      // Also ensure confidence is saved (use current value or default to 0.5)
+      const newConfidence = [...confidenceScores];
+      while (newConfidence.length < TOTAL_SCENARIOS) {
+        newConfidence.push(0.5);
+      }
+      if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+        // Use current confidence or keep existing if already set
+        if (newConfidence[currentScenario.index] === 0.5 && showConfidence) {
+          // Confidence was shown but might not be set, keep 0.5 as default
+        }
+        setConfidenceScores(newConfidence);
+      }
+    }
+    
     trackButtonClick('Continue Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
     
     // Check if we've completed all scenarios in this chapter
@@ -215,14 +243,27 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   const handleSubmit = () => {
     trackButtonClick('Complete Your Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
     
+    // CRITICAL FIX: Save current scenario response if selected but not yet saved
+    let finalResponses = [...responses];
+    if (currentScenario && selectedChoice !== null) {
+      // Ensure array is correct size
+      while (finalResponses.length < TOTAL_SCENARIOS) {
+        finalResponses.push(0.5);
+      }
+      // Save the current response
+      if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+        finalResponses[currentScenario.index] = currentScenario.choices[selectedChoice].value;
+      }
+    }
+    
     // Double-check completion status with better validation
-    const answeredCountCheck = responses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
-    const allAnsweredCheck = answeredCountCheck === TOTAL_SCENARIOS && responses.length === TOTAL_SCENARIOS;
+    const answeredCountCheck = finalResponses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
+    const allAnsweredCheck = answeredCountCheck === TOTAL_SCENARIOS && finalResponses.length === TOTAL_SCENARIOS;
     
     if (!allAnsweredCheck) {
       // Show which scenarios are missing with better debugging
       const unansweredIndices: number[] = [];
-      responses.forEach((r, idx) => {
+      finalResponses.forEach((r, idx) => {
         if (r === 0.5 || r === undefined || r === null) {
           unansweredIndices.push(idx);
         }
@@ -236,17 +277,38 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       
       console.warn('Completion validation failed:');
       console.warn('- Unanswered scenario indices:', unansweredIndices);
-      console.warn('- Responses array length:', responses.length);
+      console.warn('- Responses array length:', finalResponses.length);
       console.warn('- Total scenarios:', TOTAL_SCENARIOS);
       console.warn('- Answered count:', answeredCountCheck);
-      console.warn('- Responses:', responses);
+      console.warn('- Current scenario index:', currentScenario?.index);
+      console.warn('- Selected choice:', selectedChoice);
+      console.warn('- Responses:', finalResponses);
       
-      alert(
-        `Please answer all ${TOTAL_SCENARIOS} scenarios before completing.\n\n` +
-        `You've answered ${answeredCountCheck} of ${TOTAL_SCENARIOS} scenarios.\n\n` +
-        `Missing: ${unansweredScenarios.slice(0, 5).join(', ')}${unansweredScenarios.length > 5 ? '...' : ''}`
-      );
-      return;
+      // Offer to complete anyway if user is at last scenario and has answered most
+      if (isLastScenario && answeredCountCheck >= TOTAL_SCENARIOS - 3) {
+        const proceed = confirm(
+          `You've answered ${answeredCountCheck} of ${TOTAL_SCENARIOS} scenarios.\n\n` +
+          `Missing: ${unansweredScenarios.slice(0, 3).join(', ')}${unansweredScenarios.length > 3 ? '...' : ''}\n\n` +
+          `Would you like to complete anyway? Missing scenarios will use default values.`
+        );
+        if (proceed) {
+          // Fill missing with default values and proceed
+          unansweredIndices.forEach(idx => {
+            finalResponses[idx] = 0.5; // Default neutral value
+          });
+          // Update state and continue
+          setResponses(finalResponses);
+        } else {
+          return;
+        }
+      } else {
+        alert(
+          `Please answer all ${TOTAL_SCENARIOS} scenarios before completing.\n\n` +
+          `You've answered ${answeredCountCheck} of ${TOTAL_SCENARIOS} scenarios.\n\n` +
+          `Missing: ${unansweredScenarios.slice(0, 5).join(', ')}${unansweredScenarios.length > 5 ? '...' : ''}`
+        );
+        return;
+      }
     }
     
     // Birthdate is now optional - show warning but allow completion
@@ -264,7 +326,8 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     awardBadge('complete');
     
     // Track completion
-    trackCompletion(personNumber, true, TOTAL_SCENARIOS, answeredCountCheck);
+    const finalAnsweredCount = finalResponses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
+    trackCompletion(personNumber, true, TOTAL_SCENARIOS, finalAnsweredCount);
     
     // Clear saved progress on completion
     try {
@@ -273,7 +336,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       console.warn('Failed to clear saved progress:', e);
     }
     
-    onComplete(responses, birthdate || '', name || `Person ${personNumber}`, confidenceScores);
+    onComplete(finalResponses, birthdate || '', name || `Person ${personNumber}`, confidenceScores);
   };
 
   const handleResume = () => {

@@ -23,24 +23,35 @@ export default function Home() {
   const showLandingPage = process.env.NEXT_PUBLIC_ENABLE_LANDING_PAGE !== 'false';
   
   useEffect(() => {
+    // Handle magic link authentication FIRST (before other logic)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash.substring(1);
+    
+    if (urlParams.get('auth') === 'success' || hash.includes('token=')) {
+      // Extract token from hash
+      const hashParams = new URLSearchParams(hash);
+      const token = hashParams.get('token') || hash.split('token=')[1]?.split('&')[0];
+      
+      if (token) {
+        console.log('[AUTH] Storing token from magic link');
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user_email', urlParams.get('email') || '');
+        
+        // Clear URL parameters but keep pathname
+        window.history.replaceState({}, '', window.location.pathname);
+        
+        // Trigger a page refresh to update auth state
+        // Small delay to ensure localStorage is set
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+        return; // Exit early to prevent other logic from running
+      }
+    }
+    
     // If landing page is disabled or user has already started, skip landing
     if (!showLandingPage || person1Traits) {
       setStep('person1');
-    }
-    
-    // Handle magic link authentication
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('auth') === 'success') {
-      // Extract token from hash
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const token = params.get('token');
-      
-      if (token) {
-        localStorage.setItem('auth_token', token);
-        // Clear URL
-        window.history.replaceState({}, '', window.location.pathname);
-      }
     }
   }, [showLandingPage, person1Traits]);
 

@@ -38,9 +38,13 @@ export async function GET(request: NextRequest) {
     // Delete used magic link
     magicLinks.delete(token);
 
+    // Get the base URL (use environment variable or construct from request)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+      (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'https://soulmates.syncscript.app');
+    
     // Redirect with token in URL hash (client-side will extract and store)
-    const redirectUrl = new URL('/?auth=success', request.url);
-    redirectUrl.hash = `token=${jwtToken}`;
+    // Use the full URL with hash - Next.js will preserve the hash
+    const redirectUrl = `${baseUrl}/?auth=success#token=${encodeURIComponent(jwtToken)}`;
     
     const response = NextResponse.redirect(redirectUrl);
     
@@ -50,7 +54,10 @@ export async function GET(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: '/',
     });
+
+    console.log('[AUTH] Magic link verified, redirecting to:', redirectUrl.substring(0, 100) + '...');
 
     return response;
   } catch (error) {

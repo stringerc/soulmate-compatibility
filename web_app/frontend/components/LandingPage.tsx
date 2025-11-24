@@ -22,6 +22,22 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
 
   useEffect(() => {
     checkAuth();
+    
+    // Also check auth when component mounts (in case token was just stored)
+    const checkAuthOnMount = async () => {
+      const authStatus = await isAuthenticated();
+      setIsAuth(authStatus);
+      if (authStatus) {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      }
+    };
+    
+    // Check immediately and also after a short delay (for magic link redirects)
+    checkAuthOnMount();
+    const timeout = setTimeout(checkAuthOnMount, 500);
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   const checkAuth = async () => {

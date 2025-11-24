@@ -193,7 +193,7 @@ export default function APITestPage() {
 
             {!result && !error && (
               <div className="text-center py-12 text-gray-500">
-                <p>Enter your API key and click "Test API" to see results</p>
+                <p>Enter your API key and click &quot;Test API&quot; to see results</p>
               </div>
             )}
           </div>

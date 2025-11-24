@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiClient, UsageStats } from '@/lib/api';
 import { BarChart3, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 
@@ -14,11 +14,7 @@ export default function UsageAnalytics({ partnerId }: UsageAnalyticsProps) {
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
-  useEffect(() => {
-    loadStats();
-  }, [partnerId, timeRange]);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -47,7 +43,11 @@ export default function UsageAnalytics({ partnerId }: UsageAnalyticsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [partnerId, timeRange]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   if (loading) {
     return (

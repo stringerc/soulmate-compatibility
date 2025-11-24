@@ -51,7 +51,7 @@ export default function Results({ person1, person2, onReset }: ResultsProps) {
       numerology,
       astrology,
     };
-  }, [person1, person2]);
+  }, [person1, person2, resonance]);
 
   const dimensionData = [
     { name: 'Attachment', value: result.alignments.attachment },

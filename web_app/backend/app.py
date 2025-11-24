@@ -21,6 +21,7 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 async def lifespan(app: FastAPI):
     """Lifespan events for startup and shutdown"""
     # Startup
+    print("Starting up...")
     print("Initializing database...")
     try:
         init_db()
@@ -28,6 +29,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Warning: Database initialization failed: {e}")
         print("Continuing without database (for testing)")
+        import traceback
+        traceback.print_exc()
     
     yield
     
@@ -54,8 +57,31 @@ app.add_middleware(
 
 
 # Include API routers
-app.include_router(compatibility.router)
-app.include_router(partners.router)
+try:
+    app.include_router(compatibility.router)
+    app.include_router(partners.router)
+    print("✅ Compatibility and Partners routers loaded")
+except Exception as e:
+    print(f"❌ Error loading compatibility/partners routers: {e}")
+    import traceback
+    traceback.print_exc()
+
+# Include analytics router
+try:
+    from api.v1 import analytics, auth as auth_router
+    app.include_router(analytics.router)
+    app.include_router(auth_router.router)
+    print("✅ Analytics and Auth routers loaded")
+except ImportError as e:
+    print(f"⚠️ Warning: Could not import analytics/auth routers: {e}")
+
+# Include Stripe webhook router
+try:
+    from api.v1 import stripe_webhook
+    app.include_router(stripe_webhook.router)
+    print("✅ Stripe webhook router loaded")
+except ImportError as e:
+    print(f"⚠️ Warning: Could not import stripe_webhook router: {e}")
 
 # Import and include analytics and auth routers
 try:

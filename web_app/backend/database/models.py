@@ -69,7 +69,7 @@ class APIUsage(Base):
     request_size = Column(Integer, nullable=True)  # bytes
     response_size = Column(Integer, nullable=True)  # bytes
     timestamp = Column(DateTime, server_default=func.now())
-    metadata = Column(JSONB, nullable=True)  # IP, user agent, etc.
+    request_metadata = Column(JSONB, nullable=True)  # IP, user agent, etc. (renamed from 'metadata' to avoid SQLAlchemy conflict)
     
     # Relationships
     partner = relationship("Partner", back_populates="api_usage")

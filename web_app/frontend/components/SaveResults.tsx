@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Save, Mail, CheckCircle2, X, Loader2 } from 'lucide-react';
-import { requestMagicLink, saveResults, isAuthenticated, getCurrentUser } from '@/lib/auth';
+import { requestMagicLink, saveResults, isAuthenticated as checkAuthStatus, getCurrentUser } from '@/lib/auth';
 
 interface SaveResultsProps {
   person1Data: {
@@ -28,7 +28,7 @@ export default function SaveResults({ person1Data, person2Data, compatibilitySco
   // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const auth = await isAuthenticated();
+      const auth = await checkAuthStatus();
       setIsAuthenticated(auth);
       if (auth) {
         const user = await getCurrentUser();
@@ -43,7 +43,7 @@ export default function SaveResults({ person1Data, person2Data, compatibilitySco
 
 
   const handleSaveClick = async () => {
-    if (isAuthenticated) {
+    if (isAuthenticated) { // This is the state variable
       // User is authenticated, save directly
       setStatus('saving');
       const result = await saveResults(person1Data, person2Data, compatibilityScore);

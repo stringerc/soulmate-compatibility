@@ -217,65 +217,70 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         </div>
 
         {/* Story Card */}
-        <div className={`bg-gradient-to-br ${theme.color} rounded-2xl shadow-2xl p-8 mb-6 text-white`}>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-4xl">{theme.icon}</span>
-            <div>
-              <h3 className="text-2xl font-bold">{currentChapter}</h3>
-              <p className="text-sm opacity-90">
-                Scenario {currentScenarioIndex + 1} of {currentScenarios.length}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
-            <p className="text-xl leading-relaxed">{currentScenario.storyText}</p>
-          </div>
-
-          {/* Choice Cards */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            {currentScenario.choices.map((choice, index) => (
-              <button
-                key={index}
-                onClick={() => handleChoiceSelect(index)}
-                className={`bg-white/20 backdrop-blur-sm rounded-xl p-6 text-left transition-all duration-300 hover:bg-white/30 hover:scale-105 ${
-                  selectedChoice === index ? 'ring-4 ring-yellow-300 bg-white/30' : ''
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl">{choice.visualIcon}</span>
-                  <div className="flex-1">
-                    <p className="font-semibold text-lg mb-1">{choice.text}</p>
-                    {choice.description && (
-                      <p className="text-sm opacity-80">{choice.description}</p>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Confidence Slider */}
-          {showConfidence && selectedChoice !== null && (
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-              <label className="block text-sm font-medium mb-3">
-                How certain are you about this choice? ({Math.round(confidenceScores[currentScenario.index] * 100)}%)
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={confidenceScores[currentScenario.index]}
-                onChange={(e) => handleConfidenceChange(parseFloat(e.target.value))}
-                className="w-full h-3 bg-white/20 rounded-lg appearance-none cursor-pointer accent-yellow-300"
-              />
-              <div className="flex justify-between text-xs mt-2 opacity-80">
-                <span>Not sure</span>
-                <span>Very certain</span>
+        <div className={`bg-gradient-to-br ${theme.color} rounded-2xl shadow-2xl p-8 mb-6 text-white relative overflow-hidden`}>
+          {/* Dark overlay for better text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/40 to-gray-900/20 pointer-events-none"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-4xl drop-shadow-lg">{theme.icon}</span>
+              <div>
+                <h3 className="text-2xl font-bold drop-shadow-md">{currentChapter}</h3>
+                <p className="text-sm opacity-95 drop-shadow-sm">
+                  Scenario {currentScenarioIndex + 1} of {currentScenarios.length}
+                </p>
               </div>
             </div>
-          )}
+
+            <div className="bg-white/15 backdrop-blur-md rounded-xl p-6 mb-6 border border-white/20">
+              <p className="text-xl leading-relaxed font-medium drop-shadow-md">{currentScenario.storyText}</p>
+            </div>
+
+            {/* Choice Cards */}
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              {currentScenario.choices.map((choice, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleChoiceSelect(index)}
+                  className={`bg-white/25 backdrop-blur-md rounded-xl p-6 text-left transition-all duration-300 hover:bg-white/35 hover:scale-105 border border-white/30 shadow-lg ${
+                    selectedChoice === index ? 'ring-4 ring-yellow-300 bg-white/40 shadow-xl' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <span className="text-3xl drop-shadow-md">{choice.visualIcon}</span>
+                    <div className="flex-1">
+                      <p className="font-semibold text-lg mb-1 drop-shadow-sm">{choice.text}</p>
+                      {choice.description && (
+                        <p className="text-sm opacity-90 drop-shadow-sm">{choice.description}</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Confidence Slider */}
+            {showConfidence && selectedChoice !== null && (
+              <div className="bg-white/20 backdrop-blur-md rounded-xl p-6 border border-white/30 shadow-lg relative z-10">
+                <label className="block text-sm font-medium mb-3 drop-shadow-sm">
+                  How certain are you about this choice? ({Math.round(confidenceScores[currentScenario.index] * 100)}%)
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={confidenceScores[currentScenario.index]}
+                  onChange={(e) => handleConfidenceChange(parseFloat(e.target.value))}
+                  className="w-full h-3 bg-white/30 rounded-lg appearance-none cursor-pointer accent-yellow-300 shadow-inner"
+                />
+                <div className="flex justify-between text-xs mt-2 opacity-95 drop-shadow-sm">
+                  <span>Not sure</span>
+                  <span>Very certain</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Navigation */}

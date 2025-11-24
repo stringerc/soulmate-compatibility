@@ -71,11 +71,11 @@ export default function ShareableResults({ person1, person2, onReset }: Shareabl
   // Generate compatibility type
   const compatibilityType = useMemo(() => {
     const score = result.compatibility.s_hat;
-    if (score >= 0.8) return { name: 'Soulmate Match', icon: '✨', color: 'from-pink-500 to-purple-500' };
-    if (score >= 0.7) return { name: 'Deep Connection', icon: '💕', color: 'from-purple-500 to-indigo-500' };
-    if (score >= 0.6) return { name: 'Strong Compatibility', icon: '🤝', color: 'from-blue-500 to-cyan-500' };
-    if (score >= 0.5) return { name: 'Good Match', icon: '💝', color: 'from-green-500 to-emerald-500' };
-    return { name: 'Exploring Compatibility', icon: '🌱', color: 'from-yellow-500 to-orange-500' };
+    if (score >= 0.8) return { name: 'Soulmate Match', icon: '✨', color: 'from-pink-600 to-purple-600' };
+    if (score >= 0.7) return { name: 'Deep Connection', icon: '💕', color: 'from-purple-600 to-indigo-600' };
+    if (score >= 0.6) return { name: 'Strong Compatibility', icon: '🤝', color: 'from-blue-600 to-cyan-600' };
+    if (score >= 0.5) return { name: 'Good Match', icon: '💝', color: 'from-green-600 to-emerald-600' };
+    return { name: 'Exploring Compatibility', icon: '🌱', color: 'from-yellow-600 to-orange-600' };
   }, [result.compatibility.s_hat]);
 
   const handleShare = async () => {
@@ -157,25 +157,30 @@ export default function ShareableResults({ person1, person2, onReset }: Shareabl
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Shareable Card */}
-        <div className={`bg-gradient-to-br ${compatibilityType.color} rounded-2xl shadow-2xl p-8 mb-8 text-white text-center`}>
-          <div className="text-6xl mb-4">{compatibilityType.icon}</div>
-          <h2 className="text-4xl font-bold mb-2">{compatibilityType.name}</h2>
-          <p className="text-xl mb-4">
-            {person1.name || 'Person 1'} & {person2.name || 'Person 2'}
-          </p>
-          <div className="text-7xl font-bold mb-4">
-            {Math.round(result.compatibility.s_hat * 100)}%
+        <div className={`bg-gradient-to-br ${compatibilityType.color} rounded-2xl shadow-2xl p-8 mb-8 text-white text-center relative overflow-hidden`}>
+          {/* Dark overlay for better text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/40 to-gray-900/20 pointer-events-none"></div>
+          
+          <div className="relative z-10">
+            <div className="text-6xl mb-4 drop-shadow-lg">{compatibilityType.icon}</div>
+            <h2 className="text-4xl font-bold mb-2 drop-shadow-md">{compatibilityType.name}</h2>
+            <p className="text-xl mb-4 drop-shadow-sm">
+              {person1.name || 'Person 1'} & {person2.name || 'Person 2'}
+            </p>
+            <div className="text-7xl font-bold mb-4 drop-shadow-lg">
+              {Math.round(result.compatibility.s_hat * 100)}%
+            </div>
+            <p className="text-lg opacity-95 drop-shadow-sm">
+              {soulmateTier ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Heart className="w-6 h-6 fill-current drop-shadow-md" />
+                  <span>Soulmate Tier Match!</span>
+                </span>
+              ) : (
+                `Percentile: ${Math.round(percentile)}th`
+              )}
+            </p>
           </div>
-          <p className="text-lg opacity-90">
-            {soulmateTier ? (
-              <span className="flex items-center justify-center gap-2">
-                <Heart className="w-6 h-6 fill-current" />
-                <span>Soulmate Tier Match!</span>
-              </span>
-            ) : (
-              `Percentile: ${Math.round(percentile)}th`
-            )}
-          </p>
         </div>
 
         {/* Breakdown */}

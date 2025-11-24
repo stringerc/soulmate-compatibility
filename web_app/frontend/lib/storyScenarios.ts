@@ -786,14 +786,56 @@ export const STORY_SCENARIOS: ScenarioCard[] = [
   }
 ];
 
-export const CHAPTER_THEMES: Record<string, { name: string; color: string; icon: string }> = {
-  'Chapter 1: The First Meeting': { name: 'The First Meeting', color: 'from-orange-400 to-pink-500', icon: '🌅' },
-  'Chapter 2: Building Trust': { name: 'Building Trust', color: 'from-blue-400 to-cyan-500', icon: '🌊' },
-  'Chapter 3: Making Decisions Together': { name: 'Making Decisions', color: 'from-green-400 to-emerald-500', icon: '🌲' },
-  'Chapter 4: What Matters Most': { name: 'What Matters Most', color: 'from-purple-400 to-indigo-500', icon: '⛰️' },
-  'Chapter 5: Social Connections': { name: 'Social Connections', color: 'from-pink-400 to-rose-500', icon: '🏙️' },
-  'Chapter 6: Intimacy & Connection': { name: 'Intimacy & Connection', color: 'from-red-400 to-pink-500', icon: '💕' },
-  'Chapter 7: Daily Life Together': { name: 'Daily Life Together', color: 'from-yellow-400 to-orange-500', icon: '🌻' }
+export const CHAPTER_THEMES: Record<string, { name: string; color: string; icon: string; bgColor: string; textColor: string }> = {
+  'Chapter 1: The First Meeting': { 
+    name: 'The First Meeting', 
+    color: 'from-orange-600 to-pink-600', 
+    bgColor: 'from-orange-50 to-pink-50',
+    textColor: 'text-gray-900',
+    icon: '🌅' 
+  },
+  'Chapter 2: Building Trust': { 
+    name: 'Building Trust', 
+    color: 'from-blue-600 to-cyan-600',
+    bgColor: 'from-blue-50 to-cyan-50',
+    textColor: 'text-gray-900',
+    icon: '🌊' 
+  },
+  'Chapter 3: Making Decisions Together': { 
+    name: 'Making Decisions', 
+    color: 'from-green-600 to-emerald-600',
+    bgColor: 'from-green-50 to-emerald-50',
+    textColor: 'text-gray-900',
+    icon: '🌲' 
+  },
+  'Chapter 4: What Matters Most': { 
+    name: 'What Matters Most', 
+    color: 'from-purple-600 to-indigo-600',
+    bgColor: 'from-purple-50 to-indigo-50',
+    textColor: 'text-gray-900',
+    icon: '⛰️' 
+  },
+  'Chapter 5: Social Connections': { 
+    name: 'Social Connections', 
+    color: 'from-pink-600 to-rose-600',
+    bgColor: 'from-pink-50 to-rose-50',
+    textColor: 'text-gray-900',
+    icon: '🏙️' 
+  },
+  'Chapter 6: Intimacy & Connection': { 
+    name: 'Intimacy & Connection', 
+    color: 'from-red-600 to-pink-600',
+    bgColor: 'from-red-50 to-pink-50',
+    textColor: 'text-gray-900',
+    icon: '💕' 
+  },
+  'Chapter 7: Daily Life Together': { 
+    name: 'Daily Life Together', 
+    color: 'from-yellow-600 to-orange-600',
+    bgColor: 'from-yellow-50 to-orange-50',
+    textColor: 'text-gray-900',
+    icon: '🌻' 
+  }
 };
 
 export function getCategoryChapters(): string[] {

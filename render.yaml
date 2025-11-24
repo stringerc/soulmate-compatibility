@@ -4,8 +4,9 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: pip install --upgrade pip && pip install -r web_app/backend/requirements.txt
-    startCommand: cd web_app/backend && uvicorn app:app --host 0.0.0.0 --port $PORT
+    rootDir: web_app/backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: ENVIRONMENT
         value: production

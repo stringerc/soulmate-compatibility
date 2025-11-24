@@ -139,7 +139,7 @@ export default function SaveResults({ person1Data, person2Data, compatibilitySco
             </div>
 
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Save your compatibility results to access them from any device. We'll send you a magic link (no password required).
+              Save your compatibility results to access them from any device. We&apos;ll send you a magic link (no password required).
             </p>
 
             {status === 'sent' ? (

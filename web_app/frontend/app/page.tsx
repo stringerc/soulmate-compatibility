@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import StoryQuest from '@/components/StoryQuest';
 import ShareableResults from '@/components/ShareableResults';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Home() {
   const [person1Traits, setPerson1Traits] = useState<number[] | null>(null);
@@ -45,6 +46,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
+      {/* Theme Toggle - Fixed position */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       {step === 'person1' && (
         <StoryQuest
           personNumber={1}

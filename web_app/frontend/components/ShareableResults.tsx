@@ -154,7 +154,7 @@ export default function ShareableResults({ person1, person2, onReset }: Shareabl
   const COLORS = ['#ec4899', '#a855f7', '#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 transition-colors duration-200">
       <div className="max-w-4xl mx-auto">
         {/* Shareable Card */}
         <div className={`bg-gradient-to-br ${compatibilityType.color} rounded-2xl shadow-2xl p-8 mb-8 text-white text-center relative overflow-hidden`}>

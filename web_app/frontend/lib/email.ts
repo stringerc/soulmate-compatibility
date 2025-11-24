@@ -106,36 +106,80 @@ export async function sendEmail({ to, subject, html, from }: SendEmailOptions): 
  * Send magic link email
  */
 export async function sendMagicLinkEmail(email: string, magicLinkUrl: string): Promise<EmailResult> {
+  // Extract token for manual entry option
+  const urlObj = new URL(magicLinkUrl);
+  const token = urlObj.searchParams.get('token') || '';
+  
   const html = `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Your Magic Link - Soulmate Compatibility</title>
+        <title>Sign In to Soulmate Compatibility</title>
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
         <div style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">✨ Your Magic Link</h1>
+          <h1 style="color: white; margin: 0; font-size: 28px;">✨ Sign In to Your Account</h1>
         </div>
-        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-          <p style="font-size: 16px; margin-bottom: 20px;">
-            Click the button below to sign in to your Soulmate Compatibility account. This link expires in 24 hours.
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+          <p style="font-size: 16px; margin-bottom: 20px; color: #111827;">
+            You requested to sign in to your Soulmate Compatibility account. Use one of the methods below to complete sign-in.
           </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${magicLinkUrl}" style="display: inline-block; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-              Sign In to Your Account
-            </a>
+          
+          <!-- Method 1: Direct Link -->
+          <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ec4899;">
+            <p style="font-weight: 600; margin-bottom: 10px; color: #111827;">Method 1: Click the button below</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${magicLinkUrl}" style="display: inline-block; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                Sign In to Your Account
+              </a>
+            </div>
+            <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">
+              If your email client blocks the link, use Method 2 below.
+            </p>
           </div>
-          <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
-            If the button doesn't work, copy and paste this link into your browser:
-          </p>
-          <p style="font-size: 12px; color: #9ca3af; word-break: break-all; background: #f3f4f6; padding: 10px; border-radius: 5px;">
-            ${magicLinkUrl}
-          </p>
-          <p style="font-size: 12px; color: #9ca3af; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-            This is an automated email. If you didn't request this magic link, you can safely ignore this email.
-          </p>
+          
+          <!-- Method 2: Manual Entry -->
+          <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #8b5cf6;">
+            <p style="font-weight: 600; margin-bottom: 10px; color: #111827;">Method 2: Manual Entry (If link is blocked)</p>
+            <p style="font-size: 14px; color: #374151; margin-bottom: 15px;">
+              1. Go to: <strong>https://soulmates.syncscript.app</strong>
+            </p>
+            <p style="font-size: 14px; color: #374151; margin-bottom: 15px;">
+              2. Click "Sign In" button
+            </p>
+            <p style="font-size: 14px; color: #374151; margin-bottom: 15px;">
+              3. Enter your email: <strong>${email}</strong>
+            </p>
+            <p style="font-size: 14px; color: #374151; margin-bottom: 15px;">
+              4. When prompted, enter this code:
+            </p>
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; text-align: center; margin: 15px 0;">
+              <code style="font-size: 18px; font-weight: 600; color: #111827; letter-spacing: 2px; word-break: break-all;">${token}</code>
+            </div>
+            <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">
+              Or visit this URL directly: <br>
+              <span style="word-break: break-all; color: #8b5cf6;">${magicLinkUrl}</span>
+            </p>
+          </div>
+          
+          <!-- Security Notice -->
+          <div style="background: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b; margin-top: 20px;">
+            <p style="font-size: 13px; color: #92400e; margin: 0;">
+              <strong>Security Notice:</strong> This link expires in 24 hours. If you didn't request this sign-in link, you can safely ignore this email. Your account remains secure.
+            </p>
+          </div>
+          
+          <!-- Footer -->
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <p style="font-size: 12px; color: #9ca3af; margin: 5px 0;">
+              Soulmate Compatibility | <a href="https://soulmates.syncscript.app" style="color: #8b5cf6; text-decoration: none;">Visit Website</a>
+            </p>
+            <p style="font-size: 11px; color: #9ca3af; margin: 5px 0;">
+              This is an automated email from Soulmate Compatibility. Please do not reply to this email.
+            </p>
+          </div>
         </div>
       </body>
     </html>
@@ -143,7 +187,7 @@ export async function sendMagicLinkEmail(email: string, magicLinkUrl: string): P
 
   return sendEmail({
     to: email,
-    subject: 'Your Magic Link - Soulmate Compatibility',
+    subject: 'Sign In to Soulmate Compatibility - Secure Link',
     html,
   });
 }

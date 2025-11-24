@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: soulmate-b2b-api
+    env: python
+    region: oregon
+    plan: free
+    rootDir: web_app/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: https://soulmate.syncscript.app,https://www.soulmate.syncscript.app
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 10080
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
+    # Link to existing database (will be set automatically when database is linked in dashboard)
+    # DATABASE_URL will be automatically provided by Render when database is linked
+

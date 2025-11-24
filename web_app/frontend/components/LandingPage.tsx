@@ -6,9 +6,10 @@ import Link from 'next/link';
 
 interface LandingPageProps {
   onStartTest: () => void;
+  onViewHistory?: () => void;
 }
 
-export default function LandingPage({ onStartTest }: LandingPageProps) {
+export default function LandingPage({ onStartTest, onViewHistory }: LandingPageProps) {
   const [showFAQ, setShowFAQ] = useState<string | null>(null);
 
   const faqs = [

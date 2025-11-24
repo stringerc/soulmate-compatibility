@@ -84,47 +84,36 @@ This document provides a comprehensive, research-based analysis of the alignment
 
 **Implementation**:
 
-#### Phase 2A: Landing Page Foundation (Dec 24 - Jan 7, 2025)
-**Duration**: 2 weeks
-**Focus**: Core landing page structure
+#### Phase 2: User Accounts & Landing Page (Dec 24, 2024)
+**Duration**: Immediate deployment
+**Focus**: User accounts + landing page integration
 
 **Deliverables**:
-- ✅ Basic landing page structure (10 sections)
-- ✅ Pre-hero trust bar
-- ✅ Multiple CTAs (basic implementation)
-- ✅ Mobile optimization
-- ✅ Analytics integration
+- ✅ Magic link authentication (passwordless)
+- ✅ Optional account creation after test
+- ✅ Result saving to account
+- ✅ Cross-device access
+- ✅ Result history
+- ✅ Landing page fully integrated
+- ✅ "Save Results" CTA on results page
 
-**Resources**: 60% of development capacity
-**Risk**: Low (foundation only, no complex features)
+**Resources**: 50% user accounts, 50% landing page integration
+**Risk**: Low (foundation already built)
 
-#### Phase 2B: Landing Page Enhancements (Jan 7 - Jan 21, 2025)
-**Duration**: 2 weeks
-**Focus**: Enhanced features
-
-**Deliverables**:
-- ✅ Video hero (if video available)
-- ✅ Exit-intent popup
-- ✅ Enhanced social proof
-- ✅ Mini FAQ above fold
-- ✅ Sticky mobile CTA
-
-**Resources**: 40% of development capacity
-**Risk**: Medium (some features depend on external resources)
-
-#### Phase 3: Integration & Optimization (Jan 21 - Feb 18, 2025)
+#### Phase 3: Social Discovery & Intelligence (Dec 24, 2024 - Jan 21, 2025)
 **Duration**: 4 weeks
-**Focus**: Integration with Phase 3 features + optimization
+**Focus**: Social features + AI intelligence
 
 **Deliverables**:
-- ✅ Landing page fully integrated with app
-- ✅ Personalization (basic)
+- ✅ Social discovery features
+- ✅ Friends of friends matching
+- ✅ AI-powered insights
+- ✅ Enhanced landing page personalization
 - ✅ A/B testing framework
 - ✅ Performance optimization
-- ✅ Full deployment
 
-**Resources**: 30% landing page, 70% Phase 3 features
-**Risk**: Low (foundation already built)
+**Resources**: 60% social features, 30% intelligence, 10% landing page
+**Risk**: Medium (new features)
 
 **Research Support**: 
 - Parallel development increases velocity by 35% (GitHub Research, 2023)

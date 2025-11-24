@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   totalCompatibility,
   calculateDimensionAlignments,
@@ -11,6 +11,8 @@ import {
 } from '@/lib/compatibility';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Heart, RotateCcw, Share2, Download, Copy, CheckCircle2 } from 'lucide-react';
+import SaveResults from './SaveResults';
+import { isAuthenticated } from '@/lib/auth';
 
 interface ShareableResultsProps {
   person1: {
@@ -28,6 +30,16 @@ interface ShareableResultsProps {
 
 export default function ShareableResults({ person1, person2, onReset }: ShareableResultsProps) {
   const [copied, setCopied] = useState(false);
+  const [userAuthenticated, setUserAuthenticated] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const auth = await isAuthenticated();
+    setUserAuthenticated(auth);
+  };
 
   const result = useMemo(() => {
     const p1: PersonVector = { traits: person1.traits };

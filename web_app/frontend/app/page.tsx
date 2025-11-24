@@ -16,7 +16,7 @@ export default function Home() {
   const [person2Name, setPerson2Name] = useState<string>('');
   const [person1Confidence, setPerson1Confidence] = useState<number[]>([]);
   const [person2Confidence, setPerson2Confidence] = useState<number[]>([]);
-  const [step, setStep] = useState<'landing' | 'person1' | 'person2' | 'results'>('landing');
+  const [step, setStep] = useState<'landing' | 'person1' | 'person2' | 'results' | 'history'>('landing');
   
   // Check if landing page should be shown (feature flag)
   const showLandingPage = process.env.NEXT_PUBLIC_ENABLE_LANDING_PAGE !== 'false';
@@ -25,6 +25,21 @@ export default function Home() {
     // If landing page is disabled or user has already started, skip landing
     if (!showLandingPage || person1Traits) {
       setStep('person1');
+    }
+    
+    // Handle magic link authentication
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('auth') === 'success') {
+      // Extract token from hash
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const token = params.get('token');
+      
+      if (token) {
+        localStorage.setItem('auth_token', token);
+        // Clear URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }
     }
   }, [showLandingPage, person1Traits]);
 

@@ -188,9 +188,25 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-transparent"
               />
               {loginMessage && (
-                <p className={`text-sm mb-4 ${loginMessage.includes('Check your email') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {loginMessage}
-                </p>
+                <div className={`text-sm mb-4 p-3 rounded-lg ${
+                  loginMessage.includes('Check your email') || loginMessage.includes('sent') || loginMessage.includes('Magic link')
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                    : loginMessage.includes('devLink') || loginMessage.includes('not configured') || loginMessage.includes('generated')
+                    ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800'
+                    : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                }`}>
+                  <p className="font-medium mb-2">{loginMessage}</p>
+                  {(loginMessage.includes('Check your email') || loginMessage.includes('sent')) && (
+                    <p className="text-xs mt-2 opacity-75">
+                      💡 Don't see it? Check your spam folder or try resending.
+                    </p>
+                  )}
+                  {loginMessage.includes('generated') && loginMessage.includes('Click here') && (
+                    <p className="text-xs mt-2 opacity-75">
+                      ⚠️ Email service not configured. Use the link above to test.
+                    </p>
+                  )}
+                </div>
               )}
               <div className="flex gap-2">
                 <button

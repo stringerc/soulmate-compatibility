@@ -26,11 +26,18 @@ export async function POST(request: NextRequest) {
     magicLinks.set(token, { email, expiresAt });
 
     // In production, send email via Resend/SendGrid/etc.
-    // For now, return the magic link URL (in production, send via email)
     const magicLinkUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/verify-magic-link?token=${token}`;
 
-    // Send email with magic link
-    await sendMagicLinkEmail(email, magicLinkUrl);
+    // Email service (in production, use Resend/SendGrid)
+    // TODO: Implement email sending
+    // Example with Resend:
+    // await resend.emails.send({
+    //   from: 'Soulmate Compatibility <noreply@soulmates.syncscript.app>',
+    //   to: email,
+    //   subject: 'Your Magic Link - Soulmate Compatibility',
+    //   html: `<p>Click <a href="${magicLinkUrl}">here</a> to sign in.</p>`,
+    // });
+    console.log(`[EMAIL] Magic link for ${email}: ${magicLinkUrl}`);
 
     return NextResponse.json({
       success: true,

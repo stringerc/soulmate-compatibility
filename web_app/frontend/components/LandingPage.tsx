@@ -270,6 +270,7 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
             <span>✅ Free forever</span>
             <span>✅ Takes ~16 minutes</span>
             <span>✅ Privacy-first</span>
+            <span>✅ Phase 2 Deployed</span>
           </div>
         </div>
       </section>

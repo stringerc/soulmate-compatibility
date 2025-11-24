@@ -215,6 +215,40 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   const handleSubmit = () => {
     trackButtonClick('Complete Your Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
     
+    // Double-check completion status with better validation
+    const answeredCountCheck = responses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
+    const allAnsweredCheck = answeredCountCheck === TOTAL_SCENARIOS && responses.length === TOTAL_SCENARIOS;
+    
+    if (!allAnsweredCheck) {
+      // Show which scenarios are missing with better debugging
+      const unansweredIndices: number[] = [];
+      responses.forEach((r, idx) => {
+        if (r === 0.5 || r === undefined || r === null) {
+          unansweredIndices.push(idx);
+        }
+      });
+      
+      // Find which chapters/scenarios are unanswered
+      const unansweredScenarios = unansweredIndices.map(idx => {
+        const scenario = STORY_SCENARIOS[idx];
+        return scenario ? `${scenario.chapter} - Scenario ${idx + 1}` : `Scenario ${idx + 1}`;
+      });
+      
+      console.warn('Completion validation failed:');
+      console.warn('- Unanswered scenario indices:', unansweredIndices);
+      console.warn('- Responses array length:', responses.length);
+      console.warn('- Total scenarios:', TOTAL_SCENARIOS);
+      console.warn('- Answered count:', answeredCountCheck);
+      console.warn('- Responses:', responses);
+      
+      alert(
+        `Please answer all ${TOTAL_SCENARIOS} scenarios before completing.\n\n` +
+        `You've answered ${answeredCountCheck} of ${TOTAL_SCENARIOS} scenarios.\n\n` +
+        `Missing: ${unansweredScenarios.slice(0, 5).join(', ')}${unansweredScenarios.length > 5 ? '...' : ''}`
+      );
+      return;
+    }
+    
     // Birthdate is now optional - show warning but allow completion
     if (!birthdate) {
       const proceed = confirm(
@@ -230,8 +264,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     awardBadge('complete');
     
     // Track completion
-    const answered = responses.filter(r => r !== 0.5).length;
-    trackCompletion(personNumber, true, TOTAL_SCENARIOS, answered);
+    trackCompletion(personNumber, true, TOTAL_SCENARIOS, answeredCountCheck);
     
     // Clear saved progress on completion
     try {

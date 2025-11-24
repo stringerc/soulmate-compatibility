@@ -554,8 +554,18 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
               {!canComplete && (
                 <div className="text-sm text-red-600 dark:text-red-400 text-right max-w-xs">
                   {!allAnswered && (
-                    <p className="mb-1">
-                      ⚠️ {remainingScenarios} scenario{remainingScenarios !== 1 ? 's' : ''} remaining
+                    <div className="mb-1">
+                      <p className="font-semibold">
+                        ⚠️ {remainingScenarios} scenario{remainingScenarios !== 1 ? 's' : ''} remaining
+                      </p>
+                      <p className="text-xs mt-1 opacity-75">
+                        ({answeredCount} of {TOTAL_SCENARIOS} completed)
+                      </p>
+                    </div>
+                  )}
+                  {allAnswered && responses.length !== TOTAL_SCENARIOS && (
+                    <p className="text-yellow-600 dark:text-yellow-400">
+                      ⚠️ Response array mismatch detected
                     </p>
                   )}
                   {!birthdate && allAnswered && (

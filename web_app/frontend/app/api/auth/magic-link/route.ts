@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { magicLinks } from '@/lib/magicLinks';
+import { sendMagicLinkEmail } from '@/lib/email';
 
 /**
  * Magic Link Authentication API
@@ -25,19 +26,19 @@ export async function POST(request: NextRequest) {
     // Store magic link
     magicLinks.set(token, { email, expiresAt });
 
-    // In production, send email via Resend/SendGrid/etc.
-    const magicLinkUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/verify-magic-link?token=${token}`;
+    // Generate magic link URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000';
+    const magicLinkUrl = `${appUrl}/api/auth/verify-magic-link?token=${token}`;
 
-    // Email service (in production, use Resend/SendGrid)
-    // TODO: Implement email sending
-    // Example with Resend:
-    // await resend.emails.send({
-    //   from: 'Soulmate Compatibility <noreply@soulmates.syncscript.app>',
-    //   to: email,
-    //   subject: 'Your Magic Link - Soulmate Compatibility',
-    //   html: `<p>Click <a href="${magicLinkUrl}">here</a> to sign in.</p>`,
-    // });
-    console.log(`[EMAIL] Magic link for ${email}: ${magicLinkUrl}`);
+    // Send magic link email via Resend
+    const emailResult = await sendMagicLinkEmail(email, magicLinkUrl);
+    
+    if (!emailResult.success && process.env.NODE_ENV === 'development') {
+      // In development, log the magic link if email fails
+      console.log(`[DEV] Magic link for ${email}: ${magicLinkUrl}`);
+    }
 
     return NextResponse.json({
       success: true,

@@ -44,17 +44,52 @@ export async function sendEmail({ to, subject, html, from }: SendEmailOptions): 
       }),
     });
 
+    const responseData = await response.json();
+
     if (!response.ok) {
-      const error = await response.json();
-      console.error('[EMAIL] Resend API error:', error);
-      return { success: false, message: error.message || 'Failed to send email' };
+      console.error('[EMAIL] Resend API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: responseData,
+      });
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to send email';
+      if (responseData.message) {
+        errorMessage = responseData.message;
+      } else if (response.status === 401) {
+        errorMessage = 'Invalid API key. Please check Resend configuration.';
+      } else if (response.status === 422) {
+        errorMessage = 'Invalid email address or domain not verified.';
+      } else if (response.status === 429) {
+        errorMessage = 'Rate limit exceeded. Please try again in a few minutes.';
+      }
+      
+      return { 
+        success: false, 
+        message: errorMessage,
+        errorDetails: responseData,
+        statusCode: response.status,
+      };
     }
 
-    const data = await response.json();
-    return { success: true };
+    console.log('[EMAIL] Successfully sent:', {
+      emailId: responseData.id,
+      to,
+      from: fromEmail,
+    });
+
+    return { 
+      success: true,
+      emailId: responseData.id,
+    };
   } catch (error) {
-    console.error('[EMAIL] Error sending email:', error);
-    return { success: false, message: 'Failed to send email' };
+    console.error('[EMAIL] Network error sending email:', error);
+    return { 
+      success: false, 
+      message: 'Network error. Please check your connection and try again.',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 

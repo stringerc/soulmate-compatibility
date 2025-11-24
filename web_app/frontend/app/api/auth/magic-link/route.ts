@@ -45,30 +45,34 @@ export async function POST(request: NextRequest) {
       magicLinkUrl: magicLinkUrl.substring(0, 50) + '...',
       emailSuccess: emailResult.success,
       emailMessage: emailResult.message,
+      emailId: emailResult.emailId,
+      errorDetails: emailResult.errorDetails,
+      statusCode: emailResult.statusCode,
       resendConfigured: !!process.env.RESEND_API_KEY,
+      fromEmail: process.env.RESEND_FROM_EMAIL || 'noreply@soulmates.syncscript.app',
     });
     
     if (!emailResult.success) {
-      // In development or if email fails, return the link in response
-      if (process.env.NODE_ENV === 'development' || !process.env.RESEND_API_KEY) {
-        console.warn(`[MAGIC LINK] Email failed, returning link in response: ${magicLinkUrl}`);
-        return NextResponse.json({
-          success: true,
-          message: 'Magic link generated! (Email service not configured - check console for link)',
-          devLink: magicLinkUrl,
-          warning: 'Email service not configured. Use devLink to test.',
-        });
-      }
+      // Always return the magic link as fallback if email fails
+      console.warn(`[MAGIC LINK] Email failed, returning link as fallback: ${magicLinkUrl}`);
       
-      // In production, still return success but log the error
-      console.error('[MAGIC LINK] Email delivery failed:', emailResult.message);
+      return NextResponse.json({
+        success: true,
+        message: emailResult.message || 'Email delivery failed, but magic link generated.',
+        devLink: magicLinkUrl, // Always include as fallback
+        warning: 'Email may not have been delivered. Use the link below to sign in.',
+        emailFailed: true,
+        errorDetails: emailResult.errorDetails,
+      });
     }
 
+    // Email sent successfully
     return NextResponse.json({
       success: true,
       message: 'Magic link sent! Check your email (including spam folder).',
-      // Include dev link in development for testing
-      devLink: process.env.NODE_ENV === 'development' ? magicLinkUrl : undefined,
+      emailId: emailResult.emailId,
+      // Include link as backup even on success (helpful for testing)
+      backupLink: process.env.NODE_ENV === 'development' ? magicLinkUrl : undefined,
     });
   } catch (error) {
     console.error('Magic link error:', error);

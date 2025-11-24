@@ -41,21 +41,37 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
     try {
       const result = await requestMagicLink(loginEmail);
       if (result.success) {
-        if (result.devLink) {
-          // Development mode - show link
-          setLoginMessage(`Magic link generated! Click here: ${result.devLink}`);
-          // Auto-open in new tab for convenience
-          if (result.devLink) {
-            window.open(result.devLink, '_blank');
-          }
+        // Check if email failed but link was generated as fallback
+        if (result.devLink || result.backupLink) {
+          const magicLink = result.devLink || result.backupLink;
+          const message = result.emailFailed 
+            ? `⚠️ Email delivery failed, but here's your magic link:`
+            : `✅ Magic link sent! Check your email. Backup link:`;
+          
+          setLoginMessage(`${message}\n\n🔗 ${magicLink}`);
+          
+          // Create clickable link button
+          setTimeout(() => {
+            if (magicLink) {
+              const linkButton = document.createElement('a');
+              linkButton.href = magicLink;
+              linkButton.target = '_blank';
+              linkButton.className = 'mt-4 block w-full px-4 py-3 bg-pink-500 text-white rounded-lg hover:bg-pink-600 text-center';
+              linkButton.textContent = 'Click here to sign in';
+              const messageDiv = document.querySelector('[data-message-container]');
+              if (messageDiv) {
+                messageDiv.appendChild(linkButton);
+              }
+            }
+          }, 100);
         } else {
-          setLoginMessage('Magic link sent! Check your email (including spam folder).');
+          setLoginMessage('✅ Magic link sent! Check your email (including spam folder).');
         }
         // Don't close modal immediately - let user see the message
         setTimeout(() => {
           setShowLoginModal(false);
           setLoginEmail('');
-        }, 3000);
+        }, result.devLink ? 10000 : 5000); // Keep open longer if showing link
       } else {
         setLoginMessage(result.message || 'Failed to send magic link. Please try again.');
       }
@@ -188,23 +204,31 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-transparent"
               />
               {loginMessage && (
-                <div className={`text-sm mb-4 p-3 rounded-lg ${
-                  loginMessage.includes('Check your email') || loginMessage.includes('sent') || loginMessage.includes('Magic link')
-                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
-                    : loginMessage.includes('devLink') || loginMessage.includes('not configured') || loginMessage.includes('generated')
-                    ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800'
-                    : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
-                }`}>
-                  <p className="font-medium mb-2">{loginMessage}</p>
+                <div 
+                  data-message-container
+                  className={`text-sm mb-4 p-3 rounded-lg ${
+                    loginMessage.includes('Check your email') || loginMessage.includes('sent') || loginMessage.includes('Magic link sent')
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                      : loginMessage.includes('devLink') || loginMessage.includes('not configured') || loginMessage.includes('generated') || loginMessage.includes('backup') || loginMessage.includes('Email delivery failed')
+                      ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800'
+                      : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                  }`}
+                >
+                  <div className="whitespace-pre-line font-medium mb-2">{loginMessage}</div>
                   {(loginMessage.includes('Check your email') || loginMessage.includes('sent')) && (
                     <p className="text-xs mt-2 opacity-75">
                       💡 Don&apos;t see it? Check your spam folder or try resending.
                     </p>
                   )}
-                  {loginMessage.includes('generated') && loginMessage.includes('Click here') && (
-                    <p className="text-xs mt-2 opacity-75">
-                      ⚠️ Email service not configured. Use the link above to test.
-                    </p>
+                  {(loginMessage.includes('Email delivery failed') || loginMessage.includes('backup')) && (
+                    <div className="text-xs mt-2 space-y-1">
+                      <p className="opacity-75">
+                        ⚠️ Email may not have been delivered. Use the link above to sign in.
+                      </p>
+                      <p className="opacity-75">
+                        📧 Check Resend dashboard: https://resend.com/emails
+                      </p>
+                    </div>
                   )}
                 </div>
               )}

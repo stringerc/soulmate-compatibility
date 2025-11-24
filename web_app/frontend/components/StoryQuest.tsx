@@ -17,8 +17,10 @@ interface Badge {
 }
 
 export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps) {
-  const [responses, setResponses] = useState<number[]>(new Array(32).fill(0.5));
-  const [confidenceScores, setConfidenceScores] = useState<number[]>(new Array(32).fill(0.5));
+  // Use actual scenario count from STORY_SCENARIOS
+  const TOTAL_SCENARIOS = STORY_SCENARIOS.length;
+  const [responses, setResponses] = useState<number[]>(new Array(TOTAL_SCENARIOS).fill(0.5));
+  const [confidenceScores, setConfidenceScores] = useState<number[]>(new Array(TOTAL_SCENARIOS).fill(0.5));
   const [birthdate, setBirthdate] = useState('');
   const [name, setName] = useState('');
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
@@ -37,9 +39,8 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   useEffect(() => {
     // Calculate progress
     const answered = responses.filter(r => r !== 0.5).length;
-    const total = 32;
-    setCompatibilityPower(Math.round((answered / total) * 100));
-  }, [responses]);
+    setCompatibilityPower(Math.round((answered / TOTAL_SCENARIOS) * 100));
+  }, [responses, TOTAL_SCENARIOS]);
 
   const handleChoiceSelect = (choiceIndex: number) => {
     if (!currentScenario) return;
@@ -131,6 +132,11 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   const allAnswered = responses.every(r => r !== 0.5);
   const isLastScenario = currentChapterIndex === chapters.length - 1 && 
                          currentScenarioIndex === currentScenarios.length - 1;
+  
+  // Calculate completion status for user feedback
+  const answeredCount = responses.filter(r => r !== 0.5).length;
+  const remainingScenarios = TOTAL_SCENARIOS - answeredCount;
+  const canComplete = allAnswered && birthdate;
 
   if (!currentScenario) return null;
 
@@ -302,14 +308,41 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
               Continue Story →
             </button>
           ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={!allAnswered || !birthdate}
-              className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold"
-            >
-              <Heart className="w-5 h-5" />
-              Complete Your Story
-            </button>
+            <div className="flex flex-col items-end gap-2">
+              {!canComplete && (
+                <div className="text-sm text-red-600 dark:text-red-400 text-right max-w-xs">
+                  {!allAnswered && (
+                    <p className="mb-1">
+                      ⚠️ {remainingScenarios} scenario{remainingScenarios !== 1 ? 's' : ''} remaining
+                    </p>
+                  )}
+                  {!birthdate && (
+                    <p>
+                      ⚠️ Please enter your birthdate to complete
+                    </p>
+                  )}
+                </div>
+              )}
+              <button
+                onClick={handleSubmit}
+                disabled={!canComplete}
+                className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold relative"
+                title={!canComplete ? (!allAnswered ? `${remainingScenarios} scenarios remaining` : 'Birthdate required') : 'Complete your compatibility assessment'}
+                aria-label={!canComplete ? (!allAnswered ? `${remainingScenarios} scenarios remaining` : 'Birthdate required') : 'Complete your compatibility assessment'}
+              >
+                {canComplete ? (
+                  <>
+                    <Heart className="w-5 h-5" />
+                    Complete Your Story
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xl">🚫</span>
+                    Complete Your Story
+                  </>
+                )}
+              </button>
+            </div>
           )}
         </div>
       </div>

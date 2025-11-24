@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { savedResults } from '@/lib/savedResults';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
-// In-memory store (in production, use PostgreSQL)
-export const savedResults = new Map<string, any[]>();
 
 export async function POST(request: NextRequest) {
   try {

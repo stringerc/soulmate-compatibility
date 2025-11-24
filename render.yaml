@@ -4,7 +4,7 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: cd web_app/backend && pip install --upgrade pip && pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r web_app/backend/requirements.txt
     startCommand: cd web_app/backend && uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: ENVIRONMENT

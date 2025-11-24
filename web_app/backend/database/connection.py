@@ -39,6 +39,15 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db():
     """Initialize database tables"""
-    from database.models import Base
-    Base.metadata.create_all(bind=engine)
+    try:
+        from database.models import Base
+        # Only create tables if DATABASE_URL is set
+        if DATABASE_URL and "postgresql" in DATABASE_URL.lower():
+            Base.metadata.create_all(bind=engine)
+            print("✅ Database tables created successfully")
+        else:
+            print("⚠️  DATABASE_URL not set or invalid, skipping table creation")
+    except Exception as e:
+        print(f"⚠️  Database initialization warning: {e}")
+        # Don't fail startup if database isn't available
 

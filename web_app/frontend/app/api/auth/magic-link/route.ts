@@ -8,6 +8,9 @@ import { sendMagicLinkEmail } from '@/lib/email';
  * Research: Magic links preferred by 67% of users (Auth0, 2024)
  */
 
+// Force dynamic rendering - this route uses request.json()
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();

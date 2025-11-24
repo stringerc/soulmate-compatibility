@@ -5,6 +5,9 @@ import { savedResults } from '@/lib/savedResults';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+// Force dynamic rendering - this route uses request.headers and request.json()
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');

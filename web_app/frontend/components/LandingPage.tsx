@@ -198,7 +198,7 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
                   <p className="font-medium mb-2">{loginMessage}</p>
                   {(loginMessage.includes('Check your email') || loginMessage.includes('sent')) && (
                     <p className="text-xs mt-2 opacity-75">
-                      💡 Don't see it? Check your spam folder or try resending.
+                      💡 Don&apos;t see it? Check your spam folder or try resending.
                     </p>
                   )}
                   {loginMessage.includes('generated') && loginMessage.includes('Click here') && (

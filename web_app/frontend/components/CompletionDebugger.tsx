@@ -17,10 +17,11 @@ interface CompletionDebuggerProps {
 }
 
 export default function CompletionDebugger({ responses, onForceComplete }: CompletionDebuggerProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // Start expanded
   const analysis = analyzeCompletion(responses);
 
-  if (analysis.canComplete) {
+  // Always show if there are unanswered scenarios (even if canComplete is true due to edge cases)
+  if (analysis.unansweredIndices.length === 0 && analysis.canComplete) {
     return null; // Don't show if everything is complete
   }
 

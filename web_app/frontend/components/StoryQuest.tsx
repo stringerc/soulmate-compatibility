@@ -5,6 +5,7 @@ import { STORY_SCENARIOS, CHAPTER_THEMES, getCategoryChapters, getScenariosForCh
 import { Sparkles, Heart, Trophy, Star, CheckCircle2 } from 'lucide-react';
 import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOff, trackButtonClick } from '@/lib/analytics';
 import { analyzeCompletion, validateCompletion, autoFillMissingResponses } from '@/lib/completionAnalyzer';
+import { performDeepAnalysis, generateFixScript } from '@/lib/deepCompletionAnalysis';
 import CompletionDebugger from './CompletionDebugger';
 
 interface StoryQuestProps {
@@ -277,8 +278,10 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   };
 
   const handleForceComplete = () => {
+    const analysis = analyzeCompletion(responses);
     const confirmed = confirm(
-      `Force complete will auto-fill ${completionAnalysis.unansweredIndices.length} missing scenario(s) with neutral values (0.5).\n\n` +
+      `Force complete will auto-fill ${analysis.unansweredIndices.length} missing scenario(s) with neutral values (0.5).\n\n` +
+      `Missing indices: ${analysis.unansweredIndices.join(', ')}\n\n` +
       `This will allow you to complete the assessment. Continue?`
     );
     
@@ -287,14 +290,42 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     // Auto-fill missing responses
     const autoFilled = autoFillMissingResponses(responses, confidenceScores);
     
+    console.log('[Force Complete] Before:', {
+      responsesLength: responses.length,
+      answeredCount: analysis.answeredCount,
+      unansweredIndices: analysis.unansweredIndices,
+    });
+    
+    console.log('[Force Complete] After:', {
+      responsesLength: autoFilled.responses.length,
+      filledCount: autoFilled.filledCount,
+    });
+    
     // Update state
     setResponses(autoFilled.responses);
     setConfidenceScores(autoFilled.confidenceScores);
     
+    // Save to localStorage immediately
+    try {
+      const progressData = {
+        responses: autoFilled.responses,
+        confidenceScores: autoFilled.confidenceScores,
+        birthdate,
+        name,
+        currentChapterIndex,
+        currentScenarioIndex,
+        badges,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+    } catch (e) {
+      console.error('Failed to save after force complete:', e);
+    }
+    
     // Immediately proceed with completion
     setTimeout(() => {
       handleSubmit(true); // Pass force flag
-    }, 100);
+    }, 200);
   };
 
   const handleSubmit = (forceComplete: boolean = false) => {
@@ -756,13 +787,74 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         </div>
       </div>
 
-      {/* Completion Debugger - Shows when user is stuck */}
+      {/* Completion Debugger - Always show when not complete */}
       {!canComplete && (
         <CompletionDebugger
           responses={responses}
           onForceComplete={handleForceComplete}
         />
       )}
+      
+      {/* Deep Analysis Button - Always visible for debugging */}
+      <button
+        onClick={() => {
+          const analysis = performDeepAnalysis(responses, STORAGE_KEY);
+          console.log('=== DEEP COMPLETION ANALYSIS ===');
+          console.log(analysis);
+          console.log('=== RESPONSES ARRAY ===');
+          console.log('Length:', responses.length);
+          console.log('Values:', responses);
+          console.log('=== ANSWERED SCENARIOS ===');
+          console.log('Indices:', analysis.answeredScenarios);
+          console.log('=== UNANSWERED SCENARIOS ===');
+          console.log('Indices:', analysis.unansweredScenarios);
+          console.log('=== ISSUES ===');
+          analysis.issues.forEach(issue => {
+            console[issue.severity === 'error' ? 'error' : 'warn'](`[${issue.severity.toUpperCase()}] ${issue.message}`, issue.details || '');
+          });
+          console.log('=== RECOMMENDATIONS ===');
+          analysis.recommendations.forEach(rec => console.log('-', rec));
+          
+          // Show in alert too
+          alert(
+            `Deep Analysis Complete!\n\n` +
+            `Total Scenarios: ${analysis.totalScenarios}\n` +
+            `Answered: ${analysis.answeredScenarios.length}\n` +
+            `Unanswered: ${analysis.unansweredScenarios.length}\n` +
+            `Array Length: ${analysis.responsesArray.length} (should be ${analysis.totalScenarios})\n\n` +
+            `Unanswered Indices: ${analysis.unansweredScenarios.join(', ')}\n\n` +
+            `Check browser console (F12) for full details.`
+          );
+        }}
+        className="fixed bottom-4 left-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg z-[10000] text-sm font-semibold"
+        title="Run deep analysis and log to console"
+      >
+        🔍 Deep Analysis
+      </button>
+      
+      {/* Reset Progress Button */}
+      <button
+        onClick={() => {
+          const confirmed = confirm(
+            'This will clear all saved progress and reset to the beginning.\n\n' +
+            'Are you sure you want to reset?'
+          );
+          if (!confirmed) return;
+          
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+            // Reload page to reset state
+            window.location.reload();
+          } catch (e) {
+            console.error('Failed to clear localStorage:', e);
+            alert('Failed to clear progress. Please clear browser data manually.');
+          }
+        }}
+        className="fixed bottom-4 left-48 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-lg z-[10000] text-sm font-semibold"
+        title="Clear saved progress and start fresh"
+      >
+        🔄 Reset Progress
+      </button>
     </div>
   );
 }

@@ -411,19 +411,18 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       : 0,
     [currentScenarios.length, currentScenarioIndex]
   );
-  // More robust completion checking
-  const answeredCount = useMemo(() => {
-    return responses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
+  // More robust completion checking using completion analyzer
+  const completionAnalysis = useMemo(() => {
+    return analyzeCompletion(responses);
   }, [responses]);
   
+  const answeredCount = useMemo(() => {
+    return completionAnalysis.answeredCount;
+  }, [completionAnalysis]);
+  
   const allAnswered = useMemo(() => {
-    // Check that we have exactly TOTAL_SCENARIOS responses and all are answered
-    if (responses.length !== TOTAL_SCENARIOS) {
-      console.warn(`Response array length mismatch: ${responses.length} vs ${TOTAL_SCENARIOS}`);
-      return false;
-    }
-    return answeredCount === TOTAL_SCENARIOS;
-  }, [responses, answeredCount, TOTAL_SCENARIOS]);
+    return completionAnalysis.canComplete;
+  }, [completionAnalysis]);
   
   const isLastScenario = useMemo(() => 
     currentChapterIndex === chapters.length - 1 && 

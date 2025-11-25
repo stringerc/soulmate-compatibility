@@ -5,6 +5,7 @@ import { STORY_SCENARIOS, CHAPTER_THEMES, getCategoryChapters, getScenariosForCh
 import { Sparkles, Heart, Trophy, Star, CheckCircle2 } from 'lucide-react';
 import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOff, trackButtonClick } from '@/lib/analytics';
 import { analyzeCompletion, validateCompletion, autoFillMissingResponses } from '@/lib/completionAnalyzer';
+import CompletionDebugger from './CompletionDebugger';
 
 interface StoryQuestProps {
   personNumber: number;
@@ -275,7 +276,28 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     }
   };
 
-  const handleSubmit = () => {
+  const handleForceComplete = () => {
+    const confirmed = confirm(
+      `Force complete will auto-fill ${completionAnalysis.unansweredIndices.length} missing scenario(s) with neutral values (0.5).\n\n` +
+      `This will allow you to complete the assessment. Continue?`
+    );
+    
+    if (!confirmed) return;
+    
+    // Auto-fill missing responses
+    const autoFilled = autoFillMissingResponses(responses, confidenceScores);
+    
+    // Update state
+    setResponses(autoFilled.responses);
+    setConfidenceScores(autoFilled.confidenceScores);
+    
+    // Immediately proceed with completion
+    setTimeout(() => {
+      handleSubmit(true); // Pass force flag
+    }, 100);
+  };
+
+  const handleSubmit = (forceComplete: boolean = false) => {
     trackButtonClick('Complete Your Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
     
     // CRITICAL FIX: Save current scenario response if selected but not yet saved
@@ -311,11 +333,13 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       unansweredCount: analysis.unansweredIndices.length,
       canComplete: analysis.canComplete,
       issues: analysis.issues,
+      forceComplete,
     });
     
-    if (!analysis.canComplete) {
-      // Auto-fill if user is on last scenario and has answered most scenarios (30+)
-      if (isLastScenario && analysis.answeredCount >= TOTAL_SCENARIOS - 2) {
+    // If force complete or auto-fill conditions met, proceed
+    if (!analysis.canComplete && !forceComplete) {
+      // Auto-fill if user is on last scenario and has answered most scenarios (28+)
+      if (isLastScenario && analysis.answeredCount >= TOTAL_SCENARIOS - 4) {
         console.log(`[handleSubmit] Auto-filling ${analysis.unansweredIndices.length} missing scenarios (user answered ${analysis.answeredCount}/${analysis.totalScenarios})`);
         const autoFilled = autoFillMissingResponses(finalResponses, finalConfidence);
         finalResponses = autoFilled.responses;
@@ -328,23 +352,29 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         // Log auto-fill
         console.log(`[handleSubmit] Auto-filled ${autoFilled.filledCount} scenarios with default values`);
       } else {
-        // Show detailed error message
+        // Show detailed error message with force complete option
         const errorMessage = [
           `Please answer all ${analysis.totalScenarios} scenarios before completing.`,
           ``,
           `You've answered ${analysis.answeredCount} of ${analysis.totalScenarios} scenarios.`,
+          `Missing ${analysis.unansweredIndices.length} scenario(s): ${analysis.unansweredIndices.slice(0, 5).join(', ')}${analysis.unansweredIndices.length > 5 ? '...' : ''}`,
           ``,
-          `Missing ${analysis.unansweredIndices.length} scenario(s):`,
-          ...analysis.unansweredScenarios.slice(0, 10).map(s => `  - ${s.chapter} (Index ${s.index})`),
-          analysis.unansweredScenarios.length > 10 ? `  ... and ${analysis.unansweredScenarios.length - 10} more` : '',
-          ``,
-          `Tip: Make sure you've selected a choice and clicked "Next" for each scenario.`,
+          `Tip: Use the "Force Complete" button (bottom right) to auto-fill missing scenarios.`,
         ].join('\n');
         
         alert(errorMessage);
         console.error('[handleSubmit] Validation failed:', validation.errors);
         return;
       }
+    }
+    
+    // If force complete, auto-fill any remaining missing scenarios
+    if (forceComplete) {
+      const autoFilled = autoFillMissingResponses(finalResponses, finalConfidence);
+      finalResponses = autoFilled.responses;
+      finalConfidence = autoFilled.confidenceScores;
+      setResponses(finalResponses);
+      setConfidenceScores(finalConfidence);
     }
     
     // Update state with final values
@@ -725,6 +755,14 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
           )}
         </div>
       </div>
+
+      {/* Completion Debugger - Shows when user is stuck */}
+      {!canComplete && (
+        <CompletionDebugger
+          responses={responses}
+          onForceComplete={handleForceComplete}
+        />
+      )}
     </div>
   );
 }

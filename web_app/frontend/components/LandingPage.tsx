@@ -192,8 +192,21 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
 
       {/* Login Modal */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+          onClick={(e) => {
+            // Close modal when clicking backdrop
+            if (e.target === e.currentTarget) {
+              setShowLoginModal(false);
+              setLoginEmail('');
+              setLoginMessage('');
+            }
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">Sign In</h3>
               <button
@@ -202,7 +215,8 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
                   setLoginEmail('');
                   setLoginMessage('');
                 }}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Close sign in modal"
               >
                 ×
               </button>
@@ -210,14 +224,27 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Enter your email to receive a magic link. No password needed!
             </p>
+            {!loginMessage && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  💡 <strong>How it works:</strong> Enter your email below, then check your inbox for a sign-in link. Click the link to automatically sign in!
+                </p>
+              </div>
+            )}
             <form onSubmit={handleLogin}>
+              <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email Address
+              </label>
               <input
+                id="login-email"
                 type="email"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                autoFocus
+                autoComplete="email"
+                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 dark:focus:border-pink-500 transition-all text-base"
               />
               {loginMessage && (
                 <div 
@@ -248,13 +275,22 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
                   )}
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-3">
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading || !loginEmail.trim()}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base shadow-md hover:shadow-lg"
                 >
-                  {isLoading ? 'Sending...' : 'Send Magic Link'}
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin">⏳</span>
+                      Sending Magic Link...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      ✉️ Send Magic Link
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -263,7 +299,7 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
                     setLoginEmail('');
                     setLoginMessage('');
                   }}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
                 >
                   Cancel
                 </button>

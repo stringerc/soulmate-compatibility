@@ -51,6 +51,35 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   };
 
   const savedProgress = loadSavedProgress();
+  
+  // Get chapters first to validate indices (only on client side)
+  let initialChapters: string[] = [];
+  let validatedChapterIndex = 0;
+  let validatedScenarioIndex = 0;
+  
+  if (typeof window !== 'undefined') {
+    try {
+      initialChapters = getCategoryChapters();
+      validatedChapterIndex = savedProgress?.currentChapterIndex != null && 
+        savedProgress.currentChapterIndex >= 0 && 
+        savedProgress.currentChapterIndex < initialChapters.length
+        ? savedProgress.currentChapterIndex 
+        : 0;
+      
+      const initialChapter = initialChapters[validatedChapterIndex] || initialChapters[0];
+      const initialScenarios = initialChapter ? getScenariosForChapter(initialChapter) : [];
+      validatedScenarioIndex = savedProgress?.currentScenarioIndex != null &&
+        savedProgress.currentScenarioIndex >= 0 &&
+        savedProgress.currentScenarioIndex < initialScenarios.length
+        ? savedProgress.currentScenarioIndex
+        : 0;
+    } catch (e) {
+      console.warn('Error validating saved progress:', e);
+      validatedChapterIndex = 0;
+      validatedScenarioIndex = 0;
+    }
+  }
+  
   const [responses, setResponses] = useState<number[]>(
     savedProgress?.responses || new Array(TOTAL_SCENARIOS).fill(0.5)
   );
@@ -59,8 +88,8 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   );
   const [birthdate, setBirthdate] = useState(savedProgress?.birthdate || '');
   const [name, setName] = useState(savedProgress?.name || '');
-  const [currentChapterIndex, setCurrentChapterIndex] = useState(savedProgress?.currentChapterIndex || 0);
-  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(savedProgress?.currentScenarioIndex || 0);
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(validatedChapterIndex);
+  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(validatedScenarioIndex);
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
   const [showConfidence, setShowConfidence] = useState(false);
   const [badges, setBadges] = useState<Badge[]>(savedProgress?.badges || []);
@@ -73,10 +102,26 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
 
   // Memoize expensive calculations
   const chapters = useMemo(() => getCategoryChapters(), []);
-  const currentChapter = useMemo(() => chapters[currentChapterIndex], [chapters, currentChapterIndex]);
-  const currentScenarios = useMemo(() => getScenariosForChapter(currentChapter), [currentChapter]);
-  const currentScenario = useMemo(() => currentScenarios[currentScenarioIndex], [currentScenarios, currentScenarioIndex]);
-  const theme = useMemo(() => CHAPTER_THEMES[currentChapter] || CHAPTER_THEMES[chapters[0]], [currentChapter, chapters]);
+  const currentChapter = useMemo(() => {
+    if (chapters.length === 0) return null;
+    return chapters[currentChapterIndex] || chapters[0] || null;
+  }, [chapters, currentChapterIndex]);
+  const currentScenarios = useMemo(() => {
+    if (!currentChapter) return [];
+    return getScenariosForChapter(currentChapter);
+  }, [currentChapter]);
+  const currentScenario = useMemo(() => {
+    if (currentScenarios.length === 0) return null;
+    return currentScenarios[currentScenarioIndex] || currentScenarios[0] || null;
+  }, [currentScenarios, currentScenarioIndex]);
+  const theme = useMemo(() => {
+    if (!currentChapter || chapters.length === 0) {
+      // Fallback to first chapter theme if available
+      const firstChapter = chapters[0];
+      return firstChapter ? CHAPTER_THEMES[firstChapter] : { color: 'from-pink-500 to-purple-500', icon: '🌅' };
+    }
+    return CHAPTER_THEMES[currentChapter] || CHAPTER_THEMES[chapters[0]] || { color: 'from-pink-500 to-purple-500', icon: '🌅' };
+  }, [currentChapter, chapters]);
 
   // Save progress to localStorage after each change
   useEffect(() => {
@@ -514,7 +559,17 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     return allAnswered && responses.length === TOTAL_SCENARIOS;
   }, [allAnswered, responses.length, TOTAL_SCENARIOS]);
 
-  if (!currentScenario) return null;
+  // Show loading state if scenarios aren't ready yet
+  if (!currentScenario || chapters.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading your story...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 transition-colors duration-200">

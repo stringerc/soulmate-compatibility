@@ -56,6 +56,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen">
+      {/* StoryQuest - Interactive Story-Based Compatibility Assessment */}
       <StoryQuest
         personNumber={1}
         onComplete={handlePersonComplete}

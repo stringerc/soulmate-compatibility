@@ -22,7 +22,7 @@ export interface DeepAnalysisResult {
     chapter: string;
     category: string;
     hasResponse: boolean;
-    responseValue: number;
+    responseValue: number | undefined;
   }>;
   issues: Array<{
     severity: 'error' | 'warning' | 'info';

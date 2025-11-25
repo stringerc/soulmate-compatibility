@@ -30,32 +30,10 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   const birthdateInputId = useId();
   const confidenceSliderId = useId();
   
-  // Initialize state with defaults (no localStorage access during SSR)
-  const [responses, setResponses] = useState<number[]>(
-    new Array(TOTAL_SCENARIOS).fill(0.5)
-  );
-  const [confidenceScores, setConfidenceScores] = useState<number[]>(
-    new Array(TOTAL_SCENARIOS).fill(0.5)
-  );
-  const [birthdate, setBirthdate] = useState('');
-  const [name, setName] = useState('');
-  const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
-  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
-  const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
-  const [showConfidence, setShowConfidence] = useState(false);
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [compatibilityPower, setCompatibilityPower] = useState(0);
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Load saved progress from localStorage after mount (client-side only)
-  useEffect(() => {
-    setIsMounted(true);
-    
-    // Load saved progress
-    const loadSavedProgress = () => {
-      if (typeof window === 'undefined') return null;
-      try {
+  // Load saved progress from localStorage
+  const loadSavedProgress = () => {
+    try {
+      if (typeof window !== 'undefined') {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const data = JSON.parse(saved);
@@ -65,40 +43,29 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
             return data;
           }
         }
-      } catch (e) {
-        console.warn('Failed to load saved progress:', e);
       }
-      return null;
-    };
-
-    const savedProgress = loadSavedProgress();
-    if (savedProgress) {
-      const savedResponses = savedProgress.responses || new Array(TOTAL_SCENARIOS).fill(0.5);
-      setResponses(savedResponses);
-      setConfidenceScores(savedProgress.confidenceScores || new Array(TOTAL_SCENARIOS).fill(0.5));
-      setBirthdate(savedProgress.birthdate || '');
-      setName(savedProgress.name || '');
-      setCurrentChapterIndex(savedProgress.currentChapterIndex || 0);
-      setCurrentScenarioIndex(savedProgress.currentScenarioIndex || 0);
-      setBadges(savedProgress.badges || []);
-      // Restore answered scenarios: any response that's not default 0.5 OR was explicitly saved
-      // For backward compatibility, check if response exists and array is correct size
-      const restoredAnswered = new Set<number>();
-      savedResponses.forEach((response: number, index: number) => {
-        // If response exists and array is correct size, consider it answered
-        // This handles the case where user selected 0.5 (valid answer)
-        if (response !== undefined && response !== null && index < TOTAL_SCENARIOS) {
-          restoredAnswered.add(index);
-        }
-      });
-      // Also check savedAnsweredScenarios if it exists (for new saves)
-      if (savedProgress.answeredScenarios && Array.isArray(savedProgress.answeredScenarios)) {
-        savedProgress.answeredScenarios.forEach((idx: number) => restoredAnswered.add(idx));
-      }
-      setAnsweredScenarios(restoredAnswered);
-      setShowResumePrompt(true);
+    } catch (e) {
+      console.warn('Failed to load saved progress:', e);
     }
-  }, [STORAGE_KEY, TOTAL_SCENARIOS]);
+    return null;
+  };
+
+  const savedProgress = loadSavedProgress();
+  const [responses, setResponses] = useState<number[]>(
+    savedProgress?.responses || new Array(TOTAL_SCENARIOS).fill(0.5)
+  );
+  const [confidenceScores, setConfidenceScores] = useState<number[]>(
+    savedProgress?.confidenceScores || new Array(TOTAL_SCENARIOS).fill(0.5)
+  );
+  const [birthdate, setBirthdate] = useState(savedProgress?.birthdate || '');
+  const [name, setName] = useState(savedProgress?.name || '');
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(savedProgress?.currentChapterIndex || 0);
+  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(savedProgress?.currentScenarioIndex || 0);
+  const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
+  const [showConfidence, setShowConfidence] = useState(false);
+  const [badges, setBadges] = useState<Badge[]>(savedProgress?.badges || []);
+  const [compatibilityPower, setCompatibilityPower] = useState(0);
+  const [showResumePrompt, setShowResumePrompt] = useState(!!savedProgress);
   
   // Track time spent on current scenario
   const scenarioStartTime = useRef<number>(Date.now());
@@ -114,28 +81,29 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   // Save progress to localStorage after each change
   useEffect(() => {
     try {
-      const progressData = {
-        responses,
-        confidenceScores,
-        birthdate,
-        name,
-        currentChapterIndex,
-        currentScenarioIndex,
-        badges,
-        answeredScenarios: Array.from(answeredScenarios), // Save answered scenarios
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+      if (typeof window !== 'undefined') {
+        const progressData = {
+          responses,
+          confidenceScores,
+          birthdate,
+          name,
+          currentChapterIndex,
+          currentScenarioIndex,
+          badges,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+      }
     } catch (e) {
       console.warn('Failed to save progress:', e);
     }
-  }, [responses, confidenceScores, birthdate, name, currentChapterIndex, currentScenarioIndex, badges, answeredScenarios, STORAGE_KEY]);
+  }, [responses, confidenceScores, birthdate, name, currentChapterIndex, currentScenarioIndex, badges, STORAGE_KEY]);
 
   useEffect(() => {
-    // Calculate progress using answeredScenarios (more accurate)
-    const answered = answeredScenarios.size;
+    // Calculate progress
+    const answered = responses.filter(r => r !== 0.5).length;
     setCompatibilityPower(Math.round((answered / TOTAL_SCENARIOS) * 100));
-  }, [answeredScenarios, TOTAL_SCENARIOS]);
+  }, [responses, TOTAL_SCENARIOS]);
 
   // Track scenario changes
   useEffect(() => {
@@ -156,12 +124,12 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   // Track drop-off on unmount
   useEffect(() => {
     return () => {
-      const answered = answeredScenarios.size;
+      const answered = responses.filter(r => r !== 0.5).length;
       if (answered < TOTAL_SCENARIOS) {
         trackDropOff(personNumber, currentChapterIndex, currentScenarioIndex, 'component_unmount');
       }
     };
-  }, [answeredScenarios, TOTAL_SCENARIOS, currentChapterIndex, currentScenarioIndex, personNumber]);
+  }, [responses, TOTAL_SCENARIOS, currentChapterIndex, currentScenarioIndex, personNumber]);
 
   const handleChoiceSelect = (choiceIndex: number) => {
     if (!currentScenario) return;
@@ -179,8 +147,6 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
       newResponses[currentScenario.index] = choice.value;
       setResponses(newResponses);
-      // Mark this scenario as answered (regardless of value, even if 0.5)
-      setAnsweredScenarios(prev => new Set(prev).add(currentScenario.index));
     } else {
       console.error(`Invalid scenario index: ${currentScenario.index} (should be 0-${TOTAL_SCENARIOS - 1})`);
     }
@@ -241,19 +207,13 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       ? currentConfidence 
       : 0.5;
     
-    // Mark this scenario as answered (CRITICAL: even if value is 0.5)
-    const updatedAnsweredScenarios = new Set(answeredScenarios);
-    updatedAnsweredScenarios.add(currentScenario.index);
-    setAnsweredScenarios(updatedAnsweredScenarios);
-    
-    // Update state immediately (synchronous) - minimal work
+    // Update state immediately (synchronous)
     setResponses(newResponses);
     setConfidenceScores(newConfidence);
     
-    // INP FIX: Defer heavy work (localStorage, analysis) to prevent blocking UI
-    // Use requestIdleCallback if available, otherwise setTimeout
-    const saveProgress = () => {
-      try {
+    // CRITICAL FIX: Save progress immediately before navigation
+    try {
+      if (typeof window !== 'undefined') {
         const progressData = {
           responses: newResponses,
           confidenceScores: newConfidence,
@@ -262,33 +222,21 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
           currentChapterIndex,
           currentScenarioIndex,
           badges,
-          answeredScenarios: Array.from(updatedAnsweredScenarios), // Save updated answered scenarios
           timestamp: Date.now(),
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
         
-        // Log completion analysis for debugging (deferred)
-        const analysis = analyzeCompletion(newResponses, updatedAnsweredScenarios);
+        // Log completion analysis for debugging
+        const analysis = analyzeCompletion(newResponses);
         console.log(`[handleNext] Scenario ${currentScenario.index} saved. Progress: ${analysis.answeredCount}/${analysis.totalScenarios}`);
-        if (analysis.unansweredIndices.length > 0) {
-          console.log(`[handleNext] Missing scenarios: ${analysis.unansweredIndices.join(', ')}`);
-        }
-      } catch (e) {
-        console.error('[handleNext] Failed to save progress:', e);
       }
-    };
-    
-    // Defer heavy work to improve INP
-    if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(saveProgress, { timeout: 100 });
-    } else {
-      setTimeout(saveProgress, 0);
+    } catch (e) {
+      console.error('[handleNext] Failed to save progress:', e);
     }
     
-    // Track button click (lightweight, can be synchronous)
     trackButtonClick('Continue Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
     
-    // Navigation (synchronous, but lightweight)
+    // Check if we've completed all scenarios in this chapter
     if (currentScenarioIndex < currentScenarios.length - 1) {
       setCurrentScenarioIndex(currentScenarioIndex + 1);
     } else {
@@ -336,69 +284,56 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   };
 
   const handleForceComplete = () => {
-    // Defer all heavy work to prevent blocking UI (fixes INP issue)
+    const analysis = analyzeCompletion(responses);
+    const confirmed = confirm(
+      `Force complete will auto-fill ${analysis.unansweredIndices.length} missing scenario(s) with neutral values (0.5).\n\n` +
+      `Missing indices: ${analysis.unansweredIndices.join(', ')}\n\n` +
+      `This will allow you to complete the assessment. Continue?`
+    );
+    
+    if (!confirmed) return;
+    
+    // Auto-fill missing responses
+    const autoFilled = autoFillMissingResponses(responses, confidenceScores);
+    
+    console.log('[Force Complete] Before:', {
+      responsesLength: responses.length,
+      answeredCount: analysis.answeredCount,
+      unansweredIndices: analysis.unansweredIndices,
+    });
+    
+    console.log('[Force Complete] After:', {
+      responsesLength: autoFilled.responses.length,
+      filledCount: autoFilled.filledCount,
+    });
+    
+    // Update state
+    setResponses(autoFilled.responses);
+    setConfidenceScores(autoFilled.confidenceScores);
+    
+    // Save to localStorage immediately
+    try {
+      if (typeof window !== 'undefined') {
+        const progressData = {
+          responses: autoFilled.responses,
+          confidenceScores: autoFilled.confidenceScores,
+          birthdate,
+          name,
+          currentChapterIndex,
+          currentScenarioIndex,
+          badges,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+      }
+    } catch (e) {
+      console.error('Failed to save after force complete:', e);
+    }
+    
+    // Immediately proceed with completion
     setTimeout(() => {
-      const analysis = analyzeCompletion(responses, answeredScenarios);
-      
-      // Defer confirm dialog
-      setTimeout(() => {
-        const confirmed = confirm(
-          `Force complete will auto-fill ${analysis.unansweredIndices.length} missing scenario(s) with neutral values (0.5).\n\n` +
-          `Missing indices: ${analysis.unansweredIndices.join(', ')}\n\n` +
-          `This will allow you to complete the assessment. Continue?`
-        );
-        
-        if (!confirmed) return;
-        
-        // Defer heavy processing
-        requestIdleCallback(() => {
-          // Auto-fill missing responses
-          const autoFilled = autoFillMissingResponses(responses, confidenceScores);
-          
-          console.log('[Force Complete] Before:', {
-            responsesLength: responses.length,
-            answeredCount: analysis.answeredCount,
-            unansweredIndices: analysis.unansweredIndices,
-          });
-          
-          console.log('[Force Complete] After:', {
-            responsesLength: autoFilled.responses.length,
-            filledCount: autoFilled.filledCount,
-          });
-          
-          // Update state (batched)
-          setResponses(autoFilled.responses);
-          setConfidenceScores(autoFilled.confidenceScores);
-          // Mark all scenarios as answered (force complete)
-          setAnsweredScenarios(new Set(Array.from({ length: TOTAL_SCENARIOS }, (_, i) => i)));
-          
-          // Defer localStorage write
-          setTimeout(() => {
-            try {
-              const progressData = {
-                responses: autoFilled.responses,
-                confidenceScores: autoFilled.confidenceScores,
-                birthdate,
-                name,
-                currentChapterIndex,
-                currentScenarioIndex,
-                badges,
-                answeredScenarios: Array.from({ length: TOTAL_SCENARIOS }, (_, i) => i), // All answered
-                timestamp: Date.now(),
-              };
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
-            } catch (e) {
-              console.error('Failed to save after force complete:', e);
-            }
-            
-            // Proceed with completion (deferred)
-            setTimeout(() => {
-              handleSubmit(true); // Pass force flag
-            }, 0);
-          }, 0);
-        }, { timeout: 100 });
-      }, 0);
-    }, 0);
+      handleSubmit(true); // Pass force flag
+    }, 200);
   };
 
   const handleSubmit = (forceComplete: boolean = false) => {
@@ -424,19 +359,11 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         if (finalConfidence[currentScenario.index] === 0.5 && showConfidence) {
           finalConfidence[currentScenario.index] = confidenceScores[currentScenario.index] || 0.5;
         }
-        // Mark as answered
-        setAnsweredScenarios(prev => new Set(prev).add(currentScenario.index));
       }
     }
     
     // Use completion analyzer for robust validation
-    // Get current answeredScenarios state (may be stale, but better than nothing)
-    const currentAnsweredSet = new Set(answeredScenarios);
-    // Also add current scenario if selected
-    if (currentScenario && selectedChoice !== null) {
-      currentAnsweredSet.add(currentScenario.index);
-    }
-    const analysis = analyzeCompletion(finalResponses, currentAnsweredSet);
+    const analysis = analyzeCompletion(finalResponses);
     const validation = validateCompletion(finalResponses);
     
     console.log('[handleSubmit] Completion Analysis:', {
@@ -513,7 +440,9 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     
     // Clear saved progress on completion
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEY);
+      }
     } catch (e) {
       console.warn('Failed to clear saved progress:', e);
     }
@@ -531,7 +460,9 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     setShowResumePrompt(false);
     // Clear saved progress
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEY);
+      }
     } catch (e) {
       console.warn('Failed to clear saved progress:', e);
     }
@@ -554,12 +485,9 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     [currentScenarios.length, currentScenarioIndex]
   );
   // More robust completion checking using completion analyzer
-  // CRITICAL FIX: Use answeredScenarios to properly detect completion
   const completionAnalysis = useMemo(() => {
-    // Pass answeredScenarios to analyzeCompletion for accurate tracking
-    const analysis = analyzeCompletion(responses, answeredScenarios);
-    return analysis;
-  }, [responses, answeredScenarios]);
+    return analyzeCompletion(responses);
+  }, [responses]);
   
   const answeredCount = useMemo(() => {
     return completionAnalysis.answeredCount;
@@ -586,26 +514,10 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     return allAnswered && responses.length === TOTAL_SCENARIOS;
   }, [allAnswered, responses.length, TOTAL_SCENARIOS]);
 
-  // Prevent hydration mismatch by ensuring consistent initial render
-  if (!isMounted || !currentScenario) {
-    return (
-      <div className="py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Your Love Story: Person {personNumber}
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Discover your compatibility through an interactive journey
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!currentScenario) return null;
 
   return (
-    <div className="py-8 px-4 pb-32">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 transition-colors duration-200">
       <div className="max-w-4xl mx-auto">
         {/* Resume Prompt */}
         {showResumePrompt && (
@@ -657,20 +569,20 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         {/* Progress Visualization */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Compatibility Power: {compatibilityPower}%
             </span>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               Chapter {currentChapterIndex + 1} of {chapters.length}
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2">
             <div
               className="bg-gradient-to-r from-pink-500 to-purple-500 h-3 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
               className={`bg-gradient-to-r ${theme.color} h-2 rounded-full transition-all duration-300`}
               style={{ width: `${chapterProgress}%` }}
@@ -684,20 +596,20 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
             {badges.map(badge => (
               <div
                 key={badge.id}
-                className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-md"
+                className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md"
               >
                 <span className="text-2xl">{badge.icon}</span>
-                <span className="text-sm font-medium text-gray-700">{badge.name}</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{badge.name}</span>
               </div>
             ))}
           </div>
         )}
 
         {/* User Info */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor={nameInputId} className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor={nameInputId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Name (optional)
               </label>
               <input
@@ -707,7 +619,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={`Person ${personNumber}`}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 aria-label={`Name for Person ${personNumber} (optional)`}
               />
             </div>
@@ -721,7 +633,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
                 type="date"
                 value={birthdate}
                 onChange={(e) => setBirthdate(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 placeholder="Select birthdate for enhanced features"
                 aria-label={`Birthdate for Person ${personNumber} (optional - enables astrology and numerology features)`}
               />
@@ -777,11 +689,11 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
               ))}
             </div>
 
-            {/* Confidence Slider - Compact inline version that doesn't push content */}
+            {/* Confidence Slider */}
             {showConfidence && selectedChoice !== null && (
-              <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg relative z-10">
-                <label htmlFor={confidenceSliderId} className="block text-xs font-medium mb-2 drop-shadow-sm">
-                  How certain? ({Math.round((confidenceScores[currentScenario.index] || 0.5) * 100)}%)
+              <div className="bg-white/20 backdrop-blur-md rounded-xl p-6 border border-white/30 shadow-lg relative z-10">
+                <label htmlFor={confidenceSliderId} className="block text-sm font-medium mb-3 drop-shadow-sm">
+                  How certain are you about this choice? ({Math.round((confidenceScores[currentScenario.index] || 0.5) * 100)}%)
                 </label>
                 <input
                   id={confidenceSliderId}
@@ -792,13 +704,13 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
                   step="0.01"
                   value={confidenceScores[currentScenario.index] || 0.5}
                   onChange={(e) => handleConfidenceChange(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer accent-yellow-300 shadow-inner"
+                  className="w-full h-3 bg-white/30 rounded-lg appearance-none cursor-pointer accent-yellow-300 shadow-inner"
                   aria-label={`Confidence level for this choice: ${Math.round((confidenceScores[currentScenario.index] || 0.5) * 100)}%`}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={Math.round((confidenceScores[currentScenario.index] || 0.5) * 100)}
                 />
-                <div className="flex justify-between text-xs mt-1 opacity-95 drop-shadow-sm">
+                <div className="flex justify-between text-xs mt-2 opacity-95 drop-shadow-sm">
                   <span>Not sure</span>
                   <span>Very certain</span>
                 </div>
@@ -807,71 +719,90 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
           </div>
         </div>
 
-        {/* Previous Button - Inline with content */}
-        <div className="mb-6">
+        {/* Navigation */}
+        <div className="flex justify-between items-center">
           <button
             onClick={handlePrevious}
             disabled={currentChapterIndex === 0 && currentScenarioIndex === 0}
-            className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2 font-semibold shadow-md"
+            className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2"
           >
             ← Previous
           </button>
-        </div>
-      </div>
 
-      {/* Floating Action Button - Always visible, fixed at bottom right */}
-      {!isLastScenario ? (
-        <button
-          onClick={handleNext}
-          disabled={selectedChoice === null}
-          className="fixed bottom-6 right-6 px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-2xl hover:shadow-3xl z-[10001] text-lg animate-pulse disabled:animate-none"
-          title={selectedChoice === null ? "Select an answer to continue" : "Continue to next scenario"}
-        >
-          Continue Story →
-        </button>
-      ) : (
-        <div className="fixed bottom-6 right-6 z-[10001] flex flex-col items-end gap-3">
-          {!canComplete && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-3 border-2 border-red-200 dark:border-red-800 max-w-xs">
-              {!allAnswered && (
-                <div className="text-sm text-red-600 dark:text-red-400">
-                  <p className="font-semibold mb-1">
-                    ⚠️ {remainingScenarios} scenario{remainingScenarios !== 1 ? 's' : ''} remaining
-                  </p>
-                  <p className="text-xs opacity-75">
-                    ({answeredCount} of {TOTAL_SCENARIOS} completed)
-                  </p>
+          {!isLastScenario ? (
+            <button
+              onClick={handleNext}
+              disabled={selectedChoice === null}
+              className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold"
+            >
+              Continue Story →
+            </button>
+          ) : (
+            <div className="flex flex-col items-end gap-2">
+              {!canComplete && (
+                <div className="text-sm text-red-600 dark:text-red-400 text-right max-w-xs">
+                  {!allAnswered && (
+                    <div className="mb-1">
+                      <p className="font-semibold">
+                        ⚠️ {remainingScenarios} scenario{remainingScenarios !== 1 ? 's' : ''} remaining
+                      </p>
+                      <p className="text-xs mt-1 opacity-75">
+                        ({answeredCount} of {TOTAL_SCENARIOS} completed)
+                      </p>
+                      {completionAnalysis.unansweredIndices.length > 0 && completionAnalysis.unansweredIndices.length <= 5 && (
+                        <p className="text-xs mt-1 opacity-75">
+                          Missing: {completionAnalysis.unansweredIndices.join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {!completionAnalysis.arraySizeCorrect && (
+                    <p className="text-yellow-600 dark:text-yellow-400">
+                      ⚠️ Response array mismatch detected
+                    </p>
+                  )}
+                  {completionAnalysis.issues.length > 0 && (
+                    <div className="text-xs mt-1 opacity-75">
+                      {completionAnalysis.issues.slice(0, 2).map((issue, i) => (
+                        <p key={i}>{issue}</p>
+                      ))}
+                    </div>
+                  )}
+                  {!birthdate && allAnswered && (
+                    <p className="text-yellow-600 dark:text-yellow-400">
+                      💡 Birthdate optional - add for astrology/numerology features
+                    </p>
+                  )}
                 </div>
               )}
+              <button
+                onClick={() => handleSubmit(false)}
+                disabled={!canComplete}
+                className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold relative"
+                title={!canComplete ? (!allAnswered ? `${remainingScenarios} scenarios remaining` : 'Birthdate required') : 'Complete your compatibility assessment'}
+                aria-label={!canComplete ? (!allAnswered ? `${remainingScenarios} scenarios remaining` : 'Birthdate required') : 'Complete your compatibility assessment'}
+              >
+                {canComplete ? (
+                  <>
+                    <Heart className="w-5 h-5" />
+                    Complete Your Story
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xl">🚫</span>
+                    Complete Your Story
+                  </>
+                )}
+              </button>
             </div>
           )}
-          <button
-            onClick={() => handleSubmit(false)}
-            disabled={!canComplete}
-            className="px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-2xl hover:shadow-3xl text-lg"
-            title={!canComplete ? (!allAnswered ? `${remainingScenarios} scenarios remaining` : 'Birthdate required') : 'Complete your compatibility assessment'}
-            aria-label={!canComplete ? (!allAnswered ? `${remainingScenarios} scenarios remaining` : 'Birthdate required') : 'Complete your compatibility assessment'}
-          >
-            {canComplete ? (
-              <>
-                <Heart className="w-5 h-5" />
-                Complete Your Story
-              </>
-            ) : (
-              <>
-                <span className="text-xl">🚫</span>
-                Complete Your Story
-              </>
-            )}
-          </button>
         </div>
-      )}
+      </div>
 
       {/* Completion Debugger - Always show when not complete */}
       {!canComplete && (
         <CompletionDebugger
           responses={responses}
-          answeredScenarios={answeredScenarios}
           onForceComplete={handleForceComplete}
         />
       )}
@@ -879,51 +810,35 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       {/* Deep Analysis Button - Always visible for debugging */}
       <button
         onClick={() => {
-          // Defer heavy work to prevent blocking UI (improves INP)
-          const runAnalysis = () => {
-            const analysis = performDeepAnalysis(responses, STORAGE_KEY);
-            
-            // Batch console logs to reduce overhead
-            setTimeout(() => {
-              console.log('=== DEEP COMPLETION ANALYSIS ===');
-              console.log(analysis);
-              console.log('=== RESPONSES ARRAY ===');
-              console.log('Length:', responses.length);
-              console.log('Values:', responses);
-              console.log('=== ANSWERED SCENARIOS ===');
-              console.log('Indices:', analysis.answeredScenarios);
-              console.log('=== UNANSWERED SCENARIOS ===');
-              console.log('Indices:', analysis.unansweredScenarios);
-              console.log('=== ISSUES ===');
-              analysis.issues.forEach(issue => {
-                console[issue.severity === 'error' ? 'error' : 'warn'](`[${issue.severity.toUpperCase()}] ${issue.message}`, issue.details || '');
-              });
-              console.log('=== RECOMMENDATIONS ===');
-              analysis.recommendations.forEach(rec => console.log('-', rec));
-              
-              // Show in alert too (defer to avoid blocking)
-              setTimeout(() => {
-                alert(
-                  `Deep Analysis Complete!\n\n` +
-                  `Total Scenarios: ${analysis.totalScenarios}\n` +
-                  `Answered: ${analysis.answeredScenarios.length}\n` +
-                  `Unanswered: ${analysis.unansweredScenarios.length}\n` +
-                  `Array Length: ${analysis.responsesArray.length} (should be ${analysis.totalScenarios})\n\n` +
-                  `Unanswered Indices: ${analysis.unansweredScenarios.join(', ')}\n\n` +
-                  `Check browser console (F12) for full details.`
-                );
-              }, 0);
-            }, 0);
-          };
+          const analysis = performDeepAnalysis(responses, STORAGE_KEY);
+          console.log('=== DEEP COMPLETION ANALYSIS ===');
+          console.log(analysis);
+          console.log('=== RESPONSES ARRAY ===');
+          console.log('Length:', responses.length);
+          console.log('Values:', responses);
+          console.log('=== ANSWERED SCENARIOS ===');
+          console.log('Indices:', analysis.answeredScenarios);
+          console.log('=== UNANSWERED SCENARIOS ===');
+          console.log('Indices:', analysis.unansweredScenarios);
+          console.log('=== ISSUES ===');
+          analysis.issues.forEach(issue => {
+            console[issue.severity === 'error' ? 'error' : 'warn'](`[${issue.severity.toUpperCase()}] ${issue.message}`, issue.details || '');
+          });
+          console.log('=== RECOMMENDATIONS ===');
+          analysis.recommendations.forEach(rec => console.log('-', rec));
           
-          // Use requestIdleCallback if available, otherwise setTimeout
-          if (typeof requestIdleCallback !== 'undefined') {
-            requestIdleCallback(runAnalysis, { timeout: 100 });
-          } else {
-            setTimeout(runAnalysis, 0);
-          }
+          // Show in alert too
+          alert(
+            `Deep Analysis Complete!\n\n` +
+            `Total Scenarios: ${analysis.totalScenarios}\n` +
+            `Answered: ${analysis.answeredScenarios.length}\n` +
+            `Unanswered: ${analysis.unansweredScenarios.length}\n` +
+            `Array Length: ${analysis.responsesArray.length} (should be ${analysis.totalScenarios})\n\n` +
+            `Unanswered Indices: ${analysis.unansweredScenarios.join(', ')}\n\n` +
+            `Check browser console (F12) for full details.`
+          );
         }}
-        className="fixed bottom-4 left-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg z-[10000] text-sm font-semibold transition-colors"
+        className="fixed bottom-4 left-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg z-[10000] text-sm font-semibold"
         title="Run deep analysis and log to console"
       >
         🔍 Deep Analysis
@@ -932,25 +847,24 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       {/* Reset Progress Button */}
       <button
         onClick={() => {
-          // Defer confirm to avoid blocking UI
-          setTimeout(() => {
-            const confirmed = confirm(
-              'This will clear all saved progress and reset to the beginning.\n\n' +
-              'Are you sure you want to reset?'
-            );
-            if (!confirmed) return;
-            
-            try {
+          const confirmed = confirm(
+            'This will clear all saved progress and reset to the beginning.\n\n' +
+            'Are you sure you want to reset?'
+          );
+          if (!confirmed) return;
+          
+          try {
+            if (typeof window !== 'undefined') {
               localStorage.removeItem(STORAGE_KEY);
               // Reload page to reset state
               window.location.reload();
-            } catch (e) {
-              console.error('Failed to clear localStorage:', e);
-              alert('Failed to clear progress. Please clear browser data manually.');
             }
-          }, 0);
+          } catch (e) {
+            console.error('Failed to clear localStorage:', e);
+            alert('Failed to clear progress. Please clear browser data manually.');
+          }
         }}
-        className="fixed bottom-4 left-48 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-lg z-[10000] text-sm font-semibold transition-colors"
+        className="fixed bottom-4 left-48 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-lg z-[10000] text-sm font-semibold"
         title="Clear saved progress and start fresh"
       >
         🔄 Reset Progress
@@ -958,4 +872,3 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     </div>
   );
 }
-

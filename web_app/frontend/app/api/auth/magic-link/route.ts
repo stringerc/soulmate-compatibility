@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
-import { magicLinks } from '@/lib/magicLinks';
+import jwt from 'jsonwebtoken';
 import { sendMagicLinkEmail } from '@/lib/email';
 
 /**
- * Magic Link Authentication API
+ * Magic Link Authentication API (Stateless JWT-based)
  * Research: Magic links preferred by 67% of users (Auth0, 2024)
+ * 
+ * STATELESS APPROACH: Magic link token is a signed JWT containing email and expiration.
+ * This works across serverless function instances (Vercel) without needing Redis/database.
  */
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const MAGIC_LINK_EXPIRY_HOURS = 24;
 
 // Force dynamic rendering - this route uses request.json()
 export const dynamic = 'force-dynamic';
@@ -22,18 +27,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate magic link token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-
-    // Store magic link
-    magicLinks.set(token, { email, expiresAt });
+    // Generate stateless magic link token (JWT containing email and expiration)
+    const magicLinkToken = jwt.sign(
+      { 
+        email, 
+        type: 'magic_link',
+        iat: Math.floor(Date.now() / 1000)
+      },
+      JWT_SECRET,
+      { expiresIn: `${MAGIC_LINK_EXPIRY_HOURS}h` }
+    );
 
     // Generate magic link URL
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       'https://soulmates.syncscript.app';
-    const magicLinkUrl = `${appUrl}/api/auth/verify-magic-link?token=${token}`;
+    const magicLinkUrl = `${appUrl}/api/auth/verify-magic-link?token=${magicLinkToken}`;
 
     // Send magic link email via Resend
     const emailResult = await sendMagicLinkEmail(email, magicLinkUrl);

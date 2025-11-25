@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, useId } from 'react';
 import { STORY_SCENARIOS, CHAPTER_THEMES, getCategoryChapters, getScenariosForChapter } from '@/lib/storyScenarios';
 import { Sparkles, Heart, Trophy, Star, CheckCircle2 } from 'lucide-react';
 import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOff, trackButtonClick } from '@/lib/analytics';
+import { analyzeCompletion, validateCompletion, autoFillMissingResponses } from '@/lib/completionAnalyzer';
 
 interface StoryQuestProps {
   personNumber: number;
@@ -166,36 +167,43 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   };
 
   const handleNext = () => {
-    if (!currentScenario || selectedChoice === null) return;
+    if (!currentScenario || selectedChoice === null) {
+      console.warn('[handleNext] Cannot proceed: no scenario or choice selected');
+      return;
+    }
     
     // CRITICAL FIX: Ensure current response is saved before navigating
     const choice = currentScenario.choices[selectedChoice];
     const newResponses = [...responses];
-    // Ensure array is the right size
+    const newConfidence = [...confidenceScores];
+    
+    // Ensure arrays are the right size
     while (newResponses.length < TOTAL_SCENARIOS) {
       newResponses.push(0.5);
     }
-    // Save the current response
-    if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
-      newResponses[currentScenario.index] = choice.value;
-      setResponses(newResponses);
-    }
-    
-    // Also ensure confidence is saved (use current value or default to 0.5)
-    const newConfidence = [...confidenceScores];
     while (newConfidence.length < TOTAL_SCENARIOS) {
       newConfidence.push(0.5);
     }
-    if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
-      // Use current confidence value if set, otherwise keep 0.5
-      const currentConfidence = confidenceScores[currentScenario.index];
-      if (currentConfidence !== undefined && currentConfidence !== 0.5) {
-        newConfidence[currentScenario.index] = currentConfidence;
-      } else {
-        newConfidence[currentScenario.index] = 0.5; // Default confidence
-      }
-      setConfidenceScores(newConfidence);
+    
+    // Validate scenario index
+    if (currentScenario.index < 0 || currentScenario.index >= TOTAL_SCENARIOS) {
+      console.error(`[handleNext] Invalid scenario index: ${currentScenario.index} (should be 0-${TOTAL_SCENARIOS - 1})`);
+      alert(`Error: Invalid scenario index. Please refresh the page.`);
+      return;
     }
+    
+    // Save the current response
+    newResponses[currentScenario.index] = choice.value;
+    
+    // Save confidence (use current value or default to 0.5)
+    const currentConfidence = confidenceScores[currentScenario.index];
+    newConfidence[currentScenario.index] = currentConfidence !== undefined && currentConfidence !== 0.5 
+      ? currentConfidence 
+      : 0.5;
+    
+    // Update state immediately (synchronous)
+    setResponses(newResponses);
+    setConfidenceScores(newConfidence);
     
     // CRITICAL FIX: Save progress immediately before navigation
     try {
@@ -210,8 +218,12 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         timestamp: Date.now(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+      
+      // Log completion analysis for debugging
+      const analysis = analyzeCompletion(newResponses);
+      console.log(`[handleNext] Scenario ${currentScenario.index} saved. Progress: ${analysis.answeredCount}/${analysis.totalScenarios}`);
     } catch (e) {
-      console.warn('Failed to save progress:', e);
+      console.error('[handleNext] Failed to save progress:', e);
     }
     
     trackButtonClick('Continue Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
@@ -278,7 +290,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       finalConfidence.push(0.5);
     }
     
-    // Save the current scenario response if selected
+    // Save the current scenario response if selected (user might be on last scenario)
     if (currentScenario && selectedChoice !== null) {
       if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
         finalResponses[currentScenario.index] = currentScenario.choices[selectedChoice].value;
@@ -289,54 +301,48 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       }
     }
     
-    // CRITICAL FIX: Use finalResponses for validation (not state - state updates are async!)
-    const answeredCountCheck = finalResponses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
-    const allAnsweredCheck = answeredCountCheck === TOTAL_SCENARIOS && finalResponses.length === TOTAL_SCENARIOS;
+    // Use completion analyzer for robust validation
+    const analysis = analyzeCompletion(finalResponses);
+    const validation = validateCompletion(finalResponses);
     
-    if (!allAnsweredCheck) {
-      // Show which scenarios are missing with better debugging
-      const unansweredIndices: number[] = [];
-      finalResponses.forEach((r, idx) => {
-        if (r === 0.5 || r === undefined || r === null) {
-          unansweredIndices.push(idx);
-        }
-      });
-      
-      // Find which chapters/scenarios are unanswered
-      const unansweredScenarios = unansweredIndices.map(idx => {
-        const scenario = STORY_SCENARIOS[idx];
-        return scenario ? `${scenario.chapter} - Scenario ${idx + 1}` : `Scenario ${idx + 1}`;
-      });
-      
-      console.warn('Completion validation failed:');
-      console.warn('- Unanswered scenario indices:', unansweredIndices);
-      console.warn('- Responses array length:', finalResponses.length);
-      console.warn('- Total scenarios:', TOTAL_SCENARIOS);
-      console.warn('- Answered count:', answeredCountCheck);
-      console.warn('- Current scenario index:', currentScenario?.index);
-      console.warn('- Selected choice:', selectedChoice);
-      console.warn('- Is last scenario:', isLastScenario);
-      console.warn('- Responses:', finalResponses);
-      
-      // CRITICAL FIX: Auto-complete if user is on last scenario and has answered 30+ scenarios
-      if (isLastScenario && answeredCountCheck >= TOTAL_SCENARIOS - 2) {
-        console.log(`Auto-completing: User answered ${answeredCountCheck} of ${TOTAL_SCENARIOS}, filling ${unansweredIndices.length} missing scenarios`);
-        // Fill missing with default values and proceed automatically
-        unansweredIndices.forEach(idx => {
-          finalResponses[idx] = 0.5; // Default neutral value
-          finalConfidence[idx] = 0.5; // Default confidence
-        });
-        // Update state and continue
+    console.log('[handleSubmit] Completion Analysis:', {
+      totalScenarios: analysis.totalScenarios,
+      answeredCount: analysis.answeredCount,
+      unansweredCount: analysis.unansweredIndices.length,
+      canComplete: analysis.canComplete,
+      issues: analysis.issues,
+    });
+    
+    if (!analysis.canComplete) {
+      // Auto-fill if user is on last scenario and has answered most scenarios (30+)
+      if (isLastScenario && analysis.answeredCount >= TOTAL_SCENARIOS - 2) {
+        console.log(`[handleSubmit] Auto-filling ${analysis.unansweredIndices.length} missing scenarios (user answered ${analysis.answeredCount}/${analysis.totalScenarios})`);
+        const autoFilled = autoFillMissingResponses(finalResponses, finalConfidence);
+        finalResponses = autoFilled.responses;
+        finalConfidence = autoFilled.confidenceScores;
+        
+        // Update state
         setResponses(finalResponses);
         setConfidenceScores(finalConfidence);
-        // Continue with completion below (don't return)
+        
+        // Log auto-fill
+        console.log(`[handleSubmit] Auto-filled ${autoFilled.filledCount} scenarios with default values`);
       } else {
-        alert(
-          `Please answer all ${TOTAL_SCENARIOS} scenarios before completing.\n\n` +
-          `You've answered ${answeredCountCheck} of ${TOTAL_SCENARIOS} scenarios.\n\n` +
-          `Missing scenarios: ${unansweredScenarios.slice(0, 5).join(', ')}${unansweredScenarios.length > 5 ? '...' : ''}\n\n` +
-          `Tip: Make sure you've selected a choice and clicked "Next" for each scenario.`
-        );
+        // Show detailed error message
+        const errorMessage = [
+          `Please answer all ${analysis.totalScenarios} scenarios before completing.`,
+          ``,
+          `You've answered ${analysis.answeredCount} of ${analysis.totalScenarios} scenarios.`,
+          ``,
+          `Missing ${analysis.unansweredIndices.length} scenario(s):`,
+          ...analysis.unansweredScenarios.slice(0, 10).map(s => `  - ${s.chapter} (Index ${s.index})`),
+          analysis.unansweredScenarios.length > 10 ? `  ... and ${analysis.unansweredScenarios.length - 10} more` : '',
+          ``,
+          `Tip: Make sure you've selected a choice and clicked "Next" for each scenario.`,
+        ].join('\n');
+        
+        alert(errorMessage);
+        console.error('[handleSubmit] Validation failed:', validation.errors);
         return;
       }
     }
@@ -671,12 +677,24 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
                       <p className="text-xs mt-1 opacity-75">
                         ({answeredCount} of {TOTAL_SCENARIOS} completed)
                       </p>
+                      {completionAnalysis.unansweredIndices.length > 0 && completionAnalysis.unansweredIndices.length <= 5 && (
+                        <p className="text-xs mt-1 opacity-75">
+                          Missing: {completionAnalysis.unansweredIndices.join(', ')}
+                        </p>
+                      )}
                     </div>
                   )}
-                  {allAnswered && responses.length !== TOTAL_SCENARIOS && (
+                  {!completionAnalysis.arraySizeCorrect && (
                     <p className="text-yellow-600 dark:text-yellow-400">
                       ⚠️ Response array mismatch detected
                     </p>
+                  )}
+                  {completionAnalysis.issues.length > 0 && (
+                    <div className="text-xs mt-1 opacity-75">
+                      {completionAnalysis.issues.slice(0, 2).map((issue, i) => (
+                        <p key={i}>{issue}</p>
+                      ))}
+                    </div>
                   )}
                   {!birthdate && allAnswered && (
                     <p className="text-yellow-600 dark:text-yellow-400">

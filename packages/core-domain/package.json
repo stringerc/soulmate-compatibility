@@ -1,0 +1,9 @@
+{
+  "name": "@soulmates/core-domain",
+  "version": "1.0.0",
+  "private": true,
+  "main": "typescript/index.ts",
+  "types": "typescript/index.ts",
+  "scripts": {}
+}
+

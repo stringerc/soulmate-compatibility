@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Shield, Zap, Users, CheckCircle2, Star, Play, ChevronDown, History, LogIn, User, LogOut } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Users, CheckCircle2, Star, Play, ChevronDown, History, LogIn, User, LogOut, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { isAuthenticated, getCurrentUser, signOut, requestMagicLink } from '@/lib/auth';
 import SaveResults from './SaveResults';
@@ -347,13 +347,13 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
           
           {/* Primary CTA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <button
-              onClick={onStartTest}
+            <Link
+              href="/onboarding"
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-6 text-lg font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
             >
               Start Your Free Compatibility Test
               <ArrowRight className="w-5 h-5" />
-            </button>
+            </Link>
             <button
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
               className="px-8 py-6 text-lg border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -525,13 +525,13 @@ export default function LandingPage({ onStartTest, onViewHistory }: LandingPageP
           <p className="text-xl text-pink-100 mb-8">
             Join thousands of users exploring their relationships through science
           </p>
-          <button
-            onClick={onStartTest}
+          <Link
+            href="/onboarding"
             className="bg-white text-pink-600 hover:bg-gray-100 px-8 py-6 text-lg font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2 mx-auto"
           >
             Start Your Free Test Now
             <ArrowRight className="w-5 h-5" />
-          </button>
+          </Link>
           <div className="mt-6 flex flex-wrap justify-center gap-6 text-pink-100 text-sm">
             <span>✅ No sign-up required</span>
             <span>✅ Free forever</span>

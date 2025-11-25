@@ -1,0 +1,6 @@
+{
+  "development": { "phase": 3 },
+  "staging": { "phase": 2 },
+  "production": { "phase": 1 }
+}
+

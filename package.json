@@ -1,0 +1,15 @@
+{
+  "name": "soulmate-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:soulmates": "cd apps/soulmates && SOULMATES_PHASE=3 npm run dev",
+    "build:soulmates": "cd apps/soulmates && npm run build",
+    "start:soulmates": "cd apps/soulmates && npm run start"
+  }
+}
+

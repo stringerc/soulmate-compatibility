@@ -1,0 +1,70 @@
+name: Soulmates Deploy
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'soulmates-phase-*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: |
+          cd web_app/backend
+          pip install -r requirements.txt
+      
+      - name: Run Python tests
+        run: |
+          cd web_app/backend
+          # TODO: Add actual tests
+          echo "Tests would run here"
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - name: Install Node dependencies
+        run: |
+          cd apps/soulmates
+          npm install
+      
+      - name: Type check
+        run: |
+          cd apps/soulmates
+          npm run lint || true
+      
+      - name: Build Next.js app
+        run: |
+          cd apps/soulmates
+          npm run build
+        env:
+          SOULMATES_PHASE: ${{ contains(github.ref, 'soulmates-phase-') && github.ref_name || '1' }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/soulmates-phase-'))
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy placeholder
+        run: |
+          echo "TODO: Wire deploy target (Vercel, Render, etc.)"
+          echo "Phase: ${{ contains(github.ref, 'soulmates-phase-') && github.ref_name || '1' }}"
+

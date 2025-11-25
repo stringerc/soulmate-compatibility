@@ -1,0 +1,14 @@
+{
+  "name": "@soulmates/config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./phases.ts",
+  "types": "./phases.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
+}
+

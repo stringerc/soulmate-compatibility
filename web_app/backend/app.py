@@ -66,6 +66,16 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+# Include Soulmates router
+try:
+    from api.v1.soulmates import router as soulmates_router
+    app.include_router(soulmates_router)
+    print("✅ Soulmates router loaded")
+except Exception as e:
+    print(f"⚠️ Warning: Could not import soulmates router: {e}")
+    import traceback
+    traceback.print_exc()
+
 # Include analytics router
 try:
     from api.v1 import analytics, auth as auth_router

@@ -84,7 +84,8 @@ export default function Home() {
   };
 
   const handleStartTest = () => {
-    setStep('person1');
+    // Redirect to onboarding instead of starting StoryQuest
+    window.location.href = '/onboarding';
   };
 
   const handleViewHistory = () => {

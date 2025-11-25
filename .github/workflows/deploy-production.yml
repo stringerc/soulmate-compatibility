@@ -27,22 +27,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: web_app/frontend/package-lock.json
+          cache-dependency-path: apps/soulmates/package-lock.json
       
       - name: Install dependencies
-        working-directory: web_app/frontend
+        working-directory: apps/soulmates
         run: npm ci
       
       - name: Run linter
-        working-directory: web_app/frontend
+        working-directory: apps/soulmates
         run: npm run lint -- --max-warnings 10 || true
       
       - name: Type check
-        working-directory: web_app/frontend
+        working-directory: apps/soulmates
         run: npx tsc --noEmit || true
       
       - name: Build application
-        working-directory: web_app/frontend
+        working-directory: apps/soulmates
         env:
           NEXT_PUBLIC_ENABLE_LANDING_PAGE: 'true'
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://soulmate-b2b-api.onrender.com' }}
@@ -63,7 +63,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod --yes'
-          working-directory: web_app/frontend
+          working-directory: apps/soulmates
         env:
           NEXT_PUBLIC_ENABLE_LANDING_PAGE: 'true'
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://soulmate-b2b-api.onrender.com' }}

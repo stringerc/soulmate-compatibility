@@ -764,7 +764,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
                 </div>
               )}
               <button
-                onClick={handleSubmit}
+                onClick={() => handleSubmit(false)}
                 disabled={!canComplete}
                 className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold relative"
                 title={!canComplete ? (!allAnswered ? `${remainingScenarios} scenarios remaining` : 'Birthdate required') : 'Complete your compatibility assessment'}

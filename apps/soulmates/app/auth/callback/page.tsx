@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 
-// Force dynamic rendering
+// Force dynamic rendering for pages using useSearchParams
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default function AuthCallbackPage() {
   const router = useRouter();

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PricingCard from "@/components/PricingCard";
 import { billingApi } from "@/lib/api";
 import { Check, X } from "lucide-react";
 
-// Force dynamic rendering
+// Force dynamic rendering for pages using useSearchParams
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface Plan {
   slug: string;

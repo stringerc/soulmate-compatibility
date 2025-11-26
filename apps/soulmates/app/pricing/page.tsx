@@ -6,6 +6,9 @@ import PricingCard from "@/components/PricingCard";
 import { billingApi } from "@/lib/api";
 import { Check, X } from "lucide-react";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 interface Plan {
   slug: string;
   name: string;

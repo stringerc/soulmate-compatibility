@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 const FASTAPI_URL = process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+// Force dynamic rendering since we use request.headers
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");

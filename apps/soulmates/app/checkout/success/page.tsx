@@ -7,6 +7,9 @@ import { CheckCircle2, Sparkles, ArrowRight, Zap, Crown } from "lucide-react";
 import { billingApi } from "@/lib/api";
 import PlanBadge from "@/components/PlanBadge";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function CheckoutSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -197,14 +197,20 @@ function LoginPageContent() {
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg">
                 <p className="text-sm text-red-800 dark:text-red-200 font-semibold mb-2">Sign-in Error</p>
                 <p className="text-sm text-red-700 dark:text-red-300 mb-3">{error}</p>
-                {error.includes("google") && (
-                  <div className="mt-3 p-3 bg-red-100 dark:bg-red-900/30 rounded border border-red-300 dark:border-red-700">
-                    <p className="text-xs font-medium text-red-800 dark:text-red-200 mb-2">Common fixes:</p>
-                    <ul className="text-xs text-red-700 dark:text-red-300 space-y-1 list-disc list-inside">
-                      <li>Make sure redirect URI is added in Google Console: <code className="bg-red-200 dark:bg-red-800 px-1 rounded">http://localhost:3000/api/auth/callback/google</code></li>
-                      <li>Restart dev server after updating credentials</li>
-                      <li>Check that Client ID matches: <code className="bg-red-200 dark:bg-red-800 px-1 rounded">739263757591-f5mrjkesqg66pno8ni2oj5e1j0spn61h</code></li>
-                    </ul>
+                {(error.includes("OAuth") || error.includes("not configured")) && (
+                  <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-300 dark:border-yellow-700">
+                    <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200 mb-2">💡 Alternative:</p>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                      Use the magic link option below to sign in with your email. This works even when OAuth is not configured.
+                    </p>
+                  </div>
+                )}
+                {error.includes("unavailable") && (
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-300 dark:border-blue-700">
+                    <p className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-2">💡 Try this:</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      The authentication service is temporarily unavailable. Please try again in a moment, or use Google Sign-In above.
+                    </p>
                   </div>
                 )}
               </div>

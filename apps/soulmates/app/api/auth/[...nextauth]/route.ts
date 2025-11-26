@@ -8,7 +8,7 @@ import GoogleProvider from "next-auth/providers/google";
  * Supports both Auth0 (if configured) and Google OAuth (direct)
  * Falls back to Google OAuth if Auth0 is not configured
  */
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     // Auth0 Provider (preferred - handles OAuth complexity)
     // Auth0 makes Google OAuth much easier - no redirect URI config needed!

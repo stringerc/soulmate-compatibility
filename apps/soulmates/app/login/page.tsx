@@ -61,11 +61,8 @@ function LoginPageContent() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
-    // Mark as sent immediately (so button changes to "Resend" right away)
-    if (!linkSent) {
-      setLinkSent(true);
-    }
+    setSuccess(false); // Reset success state on each attempt
+    setMagicLink(null); // Reset magic link on each attempt
 
     try {
       const response = await fetch("/api/v1/soulmates/auth/magic-link", {
@@ -92,6 +89,9 @@ function LoginPageContent() {
       }
 
       const data = await response.json();
+      
+      // Always mark as sent and show success
+      setLinkSent(true);
       setSuccess(true);
       
       // Store the magic link if provided (for dev or when email service not configured)
@@ -123,6 +123,7 @@ function LoginPageContent() {
       }
       
       setError(errorMessage);
+      setSuccess(false); // Clear success on error
       // Keep linkSent as true so they can still resend
     } finally {
       setLoading(false);

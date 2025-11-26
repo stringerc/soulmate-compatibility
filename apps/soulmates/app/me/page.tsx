@@ -29,11 +29,11 @@ export default function DashboardPage() {
         setSubscription(subscriptionData);
         
         // Log analytics event
-        if (profileData) {
+        if (profileData && typeof profileData === 'object' && 'id' in profileData) {
           try {
             logSoulmatesEvent({
               name: "profile_viewed_again",
-              payload: { profile_id: profileData?.id },
+              payload: { profile_id: (profileData as any).id },
             });
           } catch (e) {
             console.error("Analytics error:", e);

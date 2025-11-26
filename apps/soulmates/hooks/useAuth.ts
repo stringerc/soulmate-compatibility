@@ -69,7 +69,7 @@ export function useAuth(): AuthState {
     return {
       isAuthenticated: true,
       isLoading: false,
-      userId: (session as any).userId || session.user?.id || null,
+      userId: (session as any).userId || (session.user as any)?.id || null,
       userEmail: session.user?.email || null,
     };
   }

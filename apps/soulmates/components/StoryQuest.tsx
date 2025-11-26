@@ -156,13 +156,13 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       // Track completion of previous scenario
       if (lastScenarioIndex.current !== currentScenarioIndex) {
         const timeSpent = Date.now() - scenarioStartTime.current;
-        trackScenarioComplete(lastScenarioIndex.current, currentChapterIndex, timeSpent);
+        trackScenarioComplete(lastScenarioIndex.current, currentChapter || '', timeSpent);
       }
       
       // Track start of new scenario
       scenarioStartTime.current = Date.now();
       lastScenarioIndex.current = currentScenarioIndex;
-      trackScenarioStart(currentScenario.index, currentChapterIndex);
+      trackScenarioStart(currentScenario.index, currentChapter || '');
     }
   }, [currentScenario, currentScenarioIndex, currentChapterIndex]);
 
@@ -171,10 +171,10 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     return () => {
       const answered = responses.filter(r => r !== 0.5).length;
       if (answered < TOTAL_SCENARIOS) {
-        trackDropOff(personNumber, currentChapterIndex, currentScenarioIndex, 'component_unmount');
+        trackDropOff(personNumber, currentScenarioIndex, currentChapter || '', 'component_unmount');
       }
     };
-  }, [responses, TOTAL_SCENARIOS, currentChapterIndex, currentScenarioIndex, personNumber]);
+  }, [responses, TOTAL_SCENARIOS, currentChapterIndex, currentScenarioIndex, personNumber, currentChapter]);
 
   const handleChoiceSelect = (choiceIndex: number) => {
     if (!currentScenario) return;

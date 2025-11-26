@@ -171,18 +171,12 @@ function LoginPageContent() {
                 type="email"
                 value={email}
                 onChange={(e) => {
-                  // Use requestIdleCallback to defer non-critical updates
-                  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-                    requestIdleCallback(() => {
-                      setEmail(e.target.value);
-                    }, { timeout: 100 });
-                  } else {
-                    setEmail(e.target.value);
-                  }
+                  // Update immediately for responsive typing
+                  setEmail(e.target.value);
                 }}
                 onKeyDown={(e) => {
-                  // Handle Enter key immediately (no deferral)
-                  if (e.key === 'Enter' && !loading) {
+                  // Handle Enter key to submit form
+                  if (e.key === 'Enter' && !loading && email.trim()) {
                     e.preventDefault();
                     handleMagicLink(e as any);
                   }
@@ -190,6 +184,7 @@ function LoginPageContent() {
                 required
                 placeholder="you@example.com"
                 className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
+                disabled={loading}
               />
             </div>
 

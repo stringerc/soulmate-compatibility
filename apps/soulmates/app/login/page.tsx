@@ -94,8 +94,14 @@ function LoginPageContent() {
       setSuccess(true);
       
       // In development, show the dev link if provided
-      if (data.dev_link && process.env.NODE_ENV === 'development') {
+      if (data.dev_link) {
         console.log("🔗 Development magic link:", data.dev_link);
+        // Also show it in an alert for easy access
+        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+          alert(`🔗 Development Magic Link:\n\n${data.dev_link}\n\nClick OK to open it, or copy the link from the console.`);
+          // Optionally auto-open in new tab
+          window.open(data.dev_link, '_blank');
+        }
       }
     } catch (err: any) {
       console.error("Login error:", err);

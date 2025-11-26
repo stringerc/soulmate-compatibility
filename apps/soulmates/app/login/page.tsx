@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, ArrowRight, Sparkles, Chrome } from "lucide-react";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/me";
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +30,7 @@ export default function LoginPage() {
       }
       
       // Use window.location for redirect (most reliable)
-      window.location.href = "/api/auth/signin/google?callbackUrl=/me";
+      window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
       
     } catch (err: any) {
       console.error("Google sign-in error:", err);
@@ -52,7 +55,10 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ 
+          email,
+          callback_url: callbackUrl 
+        }),
       });
 
       if (!response.ok) {

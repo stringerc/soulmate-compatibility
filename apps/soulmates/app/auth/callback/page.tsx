@@ -10,6 +10,7 @@ function AuthCallbackPageContent() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const token = searchParams.get("token");
+  const callbackUrl = searchParams.get("callback_url") || "/me";
 
   useEffect(() => {
     const verifyToken = async () => {
@@ -39,9 +40,9 @@ function AuthCallbackPageContent() {
 
         setStatus("success");
         
-        // Redirect to dashboard after 1 second
+        // Redirect to callback URL (or dashboard) after 1 second
         setTimeout(() => {
-          router.push("/me");
+          router.push(callbackUrl);
         }, 1000);
       } catch (err: any) {
         console.error("Token verification error:", err);

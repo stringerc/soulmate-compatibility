@@ -4,9 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import StoryQuest from "@/components/StoryQuest";
 import { logSoulmatesEvent } from "@/lib/analytics";
+import AuthGuard from "@/components/AuthGuard";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
   const [personTraits, setPersonTraits] = useState<number[] | null>(null);
   const [personBirthdate, setPersonBirthdate] = useState<string>('');
   const [personName, setPersonName] = useState<string>('');
@@ -18,6 +21,13 @@ export default function OnboardingPage() {
     name: string,
     confidence: number[]
   ) => {
+    // Double-check authentication before saving
+    if (!isAuthenticated) {
+      alert("You must be signed in to save your profile. Redirecting to login...");
+      router.push(`/login?callbackUrl=${encodeURIComponent("/onboarding")}`);
+      return;
+    }
+
     setPersonTraits(traits);
     setPersonBirthdate(birthdate);
     setPersonName(name);
@@ -50,18 +60,27 @@ export default function OnboardingPage() {
       router.push("/me");
     } catch (error) {
       console.error("Onboarding error:", error);
-      alert("Failed to save profile. Please try again.");
+      // Check if it's an auth error
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      if (errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("authentication")) {
+        alert("Your session has expired. Please sign in again.");
+        router.push(`/login?callbackUrl=${encodeURIComponent("/onboarding")}`);
+      } else {
+        alert("Failed to save profile. Please try again.");
+      }
     }
   };
 
   return (
-    <div className="min-h-screen">
-      {/* StoryQuest - Interactive Story-Based Compatibility Assessment */}
-      <StoryQuest
-        personNumber={1}
-        onComplete={handlePersonComplete}
-      />
-    </div>
+    <AuthGuard redirectTo={`/login?callbackUrl=${encodeURIComponent("/onboarding")}`}>
+      <div className="min-h-screen">
+        {/* StoryQuest - Interactive Story-Based Compatibility Assessment */}
+        <StoryQuest
+          personNumber={1}
+          onComplete={handlePersonComplete}
+        />
+      </div>
+    </AuthGuard>
   );
 }
 

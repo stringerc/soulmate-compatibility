@@ -6,10 +6,6 @@ import PricingCard from "@/components/PricingCard";
 import { billingApi } from "@/lib/api";
 import { Check, X } from "lucide-react";
 
-// Force dynamic rendering for pages using useSearchParams
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 interface Plan {
   slug: string;
   name: string;
@@ -49,7 +45,7 @@ const PLAN_PRICES = {
   "couple-premium": { monthly: 19.99, annual: 199 },
 };
 
-export default function PricingPage() {
+function PricingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -319,6 +315,25 @@ export default function PricingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center">
+            <div className="animate-pulse space-y-4">
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mx-auto"></div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <PricingPageContent />
+    </Suspense>
   );
 }
 

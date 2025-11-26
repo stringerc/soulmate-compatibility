@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Sparkles, ArrowRight, Zap, Crown } from "lucide-react";
 import { billingApi } from "@/lib/api";
 import PlanBadge from "@/components/PlanBadge";
 
-// Force dynamic rendering for pages using useSearchParams
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [subscription, setSubscription] = useState<{ tier: string; plan_name?: string } | null>(null);
@@ -152,6 +148,21 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CheckoutSuccessPageContent />
+    </Suspense>
   );
 }
 

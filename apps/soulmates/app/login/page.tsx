@@ -14,6 +14,7 @@ function LoginPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
+  const [magicLink, setMagicLink] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -93,15 +94,21 @@ function LoginPageContent() {
       const data = await response.json();
       setSuccess(true);
       
-      // In development, show the dev link if provided
+      // Store the magic link if provided (for dev or when email service not configured)
       if (data.dev_link) {
-        console.log("🔗 Development magic link:", data.dev_link);
-        // Also show it in an alert for easy access
-        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-          alert(`🔗 Development Magic Link:\n\n${data.dev_link}\n\nClick OK to open it, or copy the link from the console.`);
-          // Optionally auto-open in new tab
-          window.open(data.dev_link, '_blank');
+        setMagicLink(data.dev_link);
+        console.log("🔗 Magic link:", data.dev_link);
+        
+        // In development/localhost, auto-open the link
+        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          // Small delay to let the success message show
+          setTimeout(() => {
+            window.open(data.dev_link, '_blank');
+          }, 500);
         }
+      } else {
+        // If no dev_link, email was sent (or should have been)
+        setMagicLink(null);
       }
     } catch (err: any) {
       console.error("Login error:", err);
@@ -227,14 +234,37 @@ function LoginPageContent() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-green-800 dark:text-green-200 font-semibold mb-1">
-                      Magic link sent!
+                      {magicLink ? "Magic link generated!" : "Magic link sent!"}
                     </p>
-                    <p className="text-xs text-green-700 dark:text-green-300">
-                      Check your email at <strong>{email}</strong>. The link expires in 15 minutes.
-                    </p>
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                      Didn't receive it? Click "Resend Magic Link" below.
-                    </p>
+                    {magicLink ? (
+                      <>
+                        <p className="text-xs text-green-700 dark:text-green-300 mb-2">
+                          Email service not configured. Use the link below to sign in:
+                        </p>
+                        <div className="mt-3 p-3 bg-white dark:bg-gray-700 rounded border border-green-300 dark:border-green-600">
+                          <a
+                            href={magicLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 break-all underline font-mono"
+                          >
+                            {magicLink}
+                          </a>
+                        </div>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                          Click the link above to sign in. It expires in 15 minutes.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-green-700 dark:text-green-300">
+                          Check your email at <strong>{email}</strong>. The link expires in 15 minutes.
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          Didn't receive it? Click "Resend Magic Link" below.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

@@ -62,14 +62,37 @@ function LoginPageContent() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || "Failed to send magic link");
+        const data = await response.json().catch(() => ({}));
+        const errorMessage = data.detail || data.error || `Server error (${response.status})`;
+        
+        // Provide helpful message for service unavailable
+        if (response.status === 503) {
+          throw new Error("Authentication service is temporarily unavailable. Please try Google Sign-In instead, or try again in a moment.");
+        }
+        
+        throw new Error(errorMessage);
       }
 
+      const data = await response.json();
       setSuccess(true);
+      
+      // In development, show the dev link if provided
+      if (data.dev_link && process.env.NODE_ENV === 'development') {
+        console.log("🔗 Development magic link:", data.dev_link);
+      }
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err.message || "Failed to send magic link. Please try again.");
+      
+      // Provide user-friendly error messages
+      let errorMessage = err.message || "Failed to send magic link. Please try again.";
+      
+      if (err.message?.includes("fetch failed") || err.message?.includes("NetworkError")) {
+        errorMessage = "Unable to connect to the server. Please check your internet connection and try again, or use Google Sign-In.";
+      } else if (err.message?.includes("503") || err.message?.includes("unavailable")) {
+        errorMessage = err.message; // Use the specific message we set
+      }
+      
+      setError(errorMessage);
       // Keep linkSent as true so they can still resend
     } finally {
       setLoading(false);

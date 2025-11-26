@@ -20,21 +20,38 @@ function LoginPageContent() {
     setError(null);
     
     try {
-      // Check if Google provider is available
-      const providers = await fetch("/api/auth/providers").then(r => r.json());
+      // Check if any OAuth provider is available
+      const providersResponse = await fetch("/api/auth/providers");
+      if (!providersResponse.ok) {
+        throw new Error("Unable to check authentication providers");
+      }
       
-      if (!providers.google) {
-        setError("Google Sign-In is not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env.local");
-        setLoading(false);
+      const providers = await providersResponse.json();
+      
+      // Check for Auth0 first (preferred), then Google
+      if (providers.auth0) {
+        window.location.href = `/api/auth/signin/auth0?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+        return;
+      } else if (providers.google) {
+        window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
         return;
       }
       
-      // Use window.location for redirect (most reliable)
-      window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+      // No OAuth providers available
+      setError(
+        "OAuth sign-in is not configured. " +
+        "Please configure either Auth0 (AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_DOMAIN) " +
+        "or Google OAuth (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET) in your environment variables. " +
+        "For now, please use the magic link option below."
+      );
+      setLoading(false);
       
     } catch (err: any) {
-      console.error("Google sign-in error:", err);
-      setError(err.message || "Failed to sign in with Google. Please check your Google OAuth credentials in .env.local");
+      console.error("OAuth sign-in error:", err);
+      setError(
+        err.message || 
+        "Failed to initialize sign-in. Please try the magic link option below, or contact support if the issue persists."
+      );
       setLoading(false);
     }
   };
@@ -119,7 +136,7 @@ function LoginPageContent() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 border-gray-200 dark:border-gray-700 p-8">
-          {/* Google Sign In Button */}
+          {/* OAuth Sign In Button (Google or Auth0) */}
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
@@ -153,10 +170,26 @@ function LoginPageContent() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  // Use requestIdleCallback to defer non-critical updates
+                  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+                    requestIdleCallback(() => {
+                      setEmail(e.target.value);
+                    }, { timeout: 100 });
+                  } else {
+                    setEmail(e.target.value);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Handle Enter key immediately (no deferral)
+                  if (e.key === 'Enter' && !loading) {
+                    e.preventDefault();
+                    handleMagicLink(e as any);
+                  }
+                }}
                 required
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
               />
             </div>
 

@@ -158,9 +158,9 @@ export default function ExplorePage() {
         },
         allow_astrology: true,
         allow_numerology: true,
-      });
+      }) as CompatibilityResult;
 
-      setResult(data as CompatibilityResult);
+      setResult(data);
       
       // Log analytics event
       try {

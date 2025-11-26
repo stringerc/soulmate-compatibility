@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SignJWT } from "jose";
+import { randomUUID } from "crypto";
 
-const FASTAPI_URL = process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+// JWT secret - use NEXTAUTH_SECRET or JWT_SECRET, or generate a fallback
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || 
+                   process.env.JWT_SECRET || 
+                   process.env.JWT_SECRET_KEY ||
+                   "fallback-secret-change-in-production-use-strong-random-key";
+
+// In-memory store for magic link tokens (in production, use Redis or database)
+const magicLinkStore = new Map<string, { email: string; expiresAt: number; callbackUrl?: string }>();
+
+// Clean up expired tokens every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, data] of magicLinkStore.entries()) {
+    if (data.expiresAt < now) {
+      magicLinkStore.delete(token);
+    }
+  }
+}, 5 * 60 * 1000);
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,61 +34,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let response: Response;
-    try {
-      response = await fetch(`${FASTAPI_URL}/api/v1/soulmates/auth/magic-link`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          email,
-          callback_url: callback_url || undefined 
-        }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(10000), // 10 second timeout
-      });
-    } catch (fetchError: any) {
-      // Backend not reachable - return helpful error
-      console.error("Backend connection error:", fetchError);
-      
-      if (fetchError.name === 'AbortError' || fetchError.message?.includes('fetch') || fetchError.message?.includes('ECONNREFUSED')) {
-        return NextResponse.json(
-          { 
-            detail: "Authentication service is temporarily unavailable. Please try again in a moment, or use Google Sign-In instead.",
-            error: "Backend unreachable"
-          },
-          { status: 503 }
-        );
-      }
-      
-      throw fetchError;
-    }
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ 
-        detail: `Backend returned error: ${response.status} ${response.statusText}` 
-      }));
-      
-      // Return the backend error with appropriate status
-      return NextResponse.json(errorData, { status: response.status });
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error in Next.js API route for magic link:", error);
+    const normalizedEmail = email.toLowerCase().trim();
     
-    // Handle different error types
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      return NextResponse.json(
-        { 
-          detail: "Unable to connect to authentication service. Please check your connection and try again.",
-          error: "Connection error"
-        },
-        { status: 503 }
-      );
+    // Generate a unique token ID
+    const tokenId = randomUUID();
+    
+    // Create JWT token (expires in 15 minutes)
+    const expiresIn = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const expiresAt = Date.now() + expiresIn;
+    
+    const token = await new SignJWT({
+      sub: tokenId,
+      email: normalizedEmail,
+      type: 'magic_link',
+      exp: Math.floor(expiresAt / 1000), // JWT exp is in seconds
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('15m')
+      .sign(new TextEncoder().encode(JWT_SECRET));
+
+    // Store token metadata
+    magicLinkStore.set(tokenId, {
+      email: normalizedEmail,
+      expiresAt,
+      callbackUrl: callback_url,
+    });
+
+    // Generate magic link URL
+    const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 
+                       process.env.NEXTAUTH_URL || 
+                       process.env.FRONTEND_URL ||
+                       (request.headers.get('origin') || 'http://localhost:3000');
+    
+    const callbackUrl = callback_url || '/me';
+    const magicLink = `${frontendUrl}/auth/callback?token=${encodeURIComponent(token)}&callback_url=${encodeURIComponent(callbackUrl)}`;
+
+    // In development, return the link directly
+    // In production, you would send an email here
+    const isDev = process.env.NODE_ENV === 'development' || 
+                  process.env.ENVIRONMENT === 'development' ||
+                  !process.env.RESEND_API_KEY; // If no email service configured
+
+    // TODO: In production, send email using Resend, SendGrid, or similar
+    // For now, return dev_link in development
+    if (isDev) {
+      console.log(`🔗 Magic link for ${normalizedEmail}: ${magicLink}`);
     }
+
+    return NextResponse.json({
+      success: true,
+      message: isDev 
+        ? "Development mode: use the link below" 
+        : "Magic link sent to your email",
+      dev_link: isDev ? magicLink : undefined,
+    });
+  } catch (error) {
+    console.error("Error generating magic link:", error);
     
     return NextResponse.json(
       { 

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify, SignJWT } from "jose";
 
-const FASTAPI_URL = process.env.FASTAPI_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+// JWT secret - must match the one used in magic-link route
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || 
+                   process.env.JWT_SECRET || 
+                   process.env.JWT_SECRET_KEY ||
+                   "fallback-secret-change-in-production-use-strong-random-key";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,21 +19,70 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${FASTAPI_URL}/api/v1/soulmates/auth/verify?token=${token}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
+    try {
+      // Verify JWT token
+      const { payload } = await jwtVerify(
+        token,
+        new TextEncoder().encode(JWT_SECRET),
+        {
+          algorithms: ['HS256'],
+        }
+      );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: "Unknown backend error" }));
-      return NextResponse.json(errorData, { status: response.status });
+      // Validate token type
+      if (payload.type !== 'magic_link') {
+        return NextResponse.json(
+          { error: "Invalid token type" },
+          { status: 401 }
+        );
+      }
+
+      // Extract user info
+      const email = payload.email as string;
+      const userId = payload.sub as string;
+
+      if (!email || !userId) {
+        return NextResponse.json(
+          { error: "Invalid token payload" },
+          { status: 401 }
+        );
+      }
+
+      // Generate a session token (longer-lived, for user session)
+      const sessionToken = await new SignJWT({
+        sub: userId,
+        email: email,
+        type: 'session',
+        exp: Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000), // 30 days
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('30d')
+        .sign(new TextEncoder().encode(JWT_SECRET));
+
+      return NextResponse.json({
+        success: true,
+        token: sessionToken,
+        user: {
+          id: userId,
+          email: email,
+        },
+      });
+    } catch (verifyError: any) {
+      console.error("Token verification error:", verifyError);
+      
+      if (verifyError.code === 'ERR_JWT_EXPIRED' || verifyError.message?.includes('expired')) {
+        return NextResponse.json(
+          { error: "Token has expired. Please request a new magic link." },
+          { status: 401 }
+        );
+      }
+      
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
     }
-
-    const data = await response.json();
-    return NextResponse.json(data);
   } catch (error) {
     console.error("Error in Next.js API route for verify:", error);
     return NextResponse.json(

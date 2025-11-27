@@ -19,7 +19,12 @@ import {
   Target,
   BarChart3,
   Clock,
-  Gift
+  Gift,
+  ChevronDown,
+  ChevronUp,
+  Shield,
+  Brain,
+  Info
 } from "lucide-react";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
@@ -61,6 +66,13 @@ export default function ExplorePage() {
   const [explorationStats, setExplorationStats] = useState(getExplorationStats());
   const [newBadges, setNewBadges] = useState<ExplorationBadge[]>([]);
   const [showBadgeNotification, setShowBadgeNotification] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    description: true,
+    strengths: false,
+    challenges: false,
+    idealMatches: false,
+    traits: false
+  });
 
   // Load user profile traits
   useEffect(() => {
@@ -626,6 +638,275 @@ export default function ExplorePage() {
                 </div>
               </div>
             </div>
+
+            {/* Archetype Profile Details - Enhanced */}
+            {(() => {
+              const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
+              if (!profile) return null;
+
+              const toggleSection = (section: string) => {
+                setExpandedSections(prev => ({
+                  ...prev,
+                  [section]: !prev[section]
+                }));
+              };
+
+              // Trait dimension labels for visualization
+              const traitLabels = [
+                'Attachment Security', 'Conflict Style', 'Cognitive Processing',
+                'Value Alignment', 'Social Orientation', 'Intimacy Depth', 'Life Structure'
+              ];
+
+              return (
+                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 shadow-xl overflow-hidden">
+                  {/* Profile Header */}
+                  <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 text-white">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                        <profile.icon className="w-8 h-8" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold mb-1">{profile.name}</h3>
+                        <div className="flex flex-wrap gap-2 text-sm">
+                          <span className="px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm">
+                            {profile.archetype}
+                          </span>
+                          <span className="px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm flex items-center gap-1">
+                            <Shield className="w-3 h-3" />
+                            {profile.attachmentStyle} Attachment
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    {/* Full Description - Always Visible */}
+                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-5 border border-indigo-200 dark:border-indigo-800">
+                      <div className="flex items-start gap-3">
+                        <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                            About This Archetype
+                          </h4>
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {profile.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Strengths - Expandable */}
+                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-indigo-200 dark:border-indigo-800 overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('strengths')}
+                        className="w-full p-5 flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          </div>
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Core Strengths
+                          </h4>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            ({profile.strengths.length} traits)
+                          </span>
+                        </div>
+                        {expandedSections.strengths ? (
+                          <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        )}
+                      </button>
+                      {expandedSections.strengths && (
+                        <div className="px-5 pb-5 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                          {profile.strengths.map((strength, idx) => (
+                            <div key={idx} className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
+                              <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                              <p className="text-gray-700 dark:text-gray-300 text-sm">{strength}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Challenges - Expandable */}
+                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-indigo-200 dark:border-indigo-800 overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('challenges')}
+                        className="w-full p-5 flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                            <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Growth Areas
+                          </h4>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            ({profile.challenges.length} areas)
+                          </span>
+                        </div>
+                        {expandedSections.challenges ? (
+                          <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        )}
+                      </button>
+                      {expandedSections.challenges && (
+                        <div className="px-5 pb-5 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                          {profile.challenges.map((challenge, idx) => (
+                            <div key={idx} className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
+                              <div className="w-4 h-4 rounded-full border-2 border-amber-600 dark:border-amber-400 mt-0.5 flex-shrink-0" />
+                              <p className="text-gray-700 dark:text-gray-300 text-sm">{challenge}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Ideal Matches - Expandable */}
+                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-indigo-200 dark:border-indigo-800 overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('idealMatches')}
+                        className="w-full p-5 flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
+                            <Heart className="w-5 h-5 text-pink-600 dark:text-pink-400" />
+                          </div>
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Ideal Matches
+                          </h4>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            ({profile.idealMatch.length} archetypes)
+                          </span>
+                        </div>
+                        {expandedSections.idealMatches ? (
+                          <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        )}
+                      </button>
+                      {expandedSections.idealMatches && (
+                        <div className="px-5 pb-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            These archetypes complement {profile.name} best, creating balanced and harmonious relationships:
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {profile.idealMatch.map((matchName) => {
+                              const matchProfile = ARCHETYPAL_PROFILES.find(p => p.name === matchName);
+                              if (!matchProfile) return null;
+                              const MatchIcon = matchProfile.icon;
+                              return (
+                                <div
+                                  key={matchName}
+                                  className="flex items-center gap-3 p-3 bg-pink-50 dark:bg-pink-900/10 rounded-lg border border-pink-200 dark:border-pink-800 hover:bg-pink-100 dark:hover:bg-pink-900/20 transition-colors cursor-pointer"
+                                  onClick={() => {
+                                    handleExplore(matchProfile.id);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }}
+                                >
+                                  <div className="p-2 bg-pink-200 dark:bg-pink-800 rounded-lg">
+                                    <MatchIcon className="w-4 h-4 text-pink-700 dark:text-pink-300" />
+                                  </div>
+                                  <span className="font-medium text-gray-900 dark:text-white text-sm">
+                                    {matchName}
+                                  </span>
+                                  <ArrowRight className="w-4 h-4 text-pink-600 dark:text-pink-400 ml-auto" />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Love Languages - Always Visible */}
+                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-5 border border-indigo-200 dark:border-indigo-800">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                          <Heart className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Love Languages
+                        </h4>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.loveLanguages.map((lang, idx) => (
+                          <span
+                            key={idx}
+                            className="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium border border-purple-200 dark:border-purple-800"
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
+                        These are the primary ways this archetype expresses and receives love
+                      </p>
+                    </div>
+
+                    {/* Trait Dimensions - Expandable */}
+                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-indigo-200 dark:border-indigo-800 overflow-hidden">
+                      <button
+                        onClick={() => toggleSection('traits')}
+                        className="w-full p-5 flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                            <Brain className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Trait Dimensions
+                          </h4>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            (32 dimensions)
+                          </span>
+                        </div>
+                        {expandedSections.traits ? (
+                          <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        )}
+                      </button>
+                      {expandedSections.traits && (
+                        <div className="px-5 pb-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            This archetype's personality profile across 32 psychological dimensions:
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {profile.traits.map((trait, idx) => {
+                              const dimension = Math.floor(idx / 4.57); // Approximate grouping
+                              const dimensionLabel = traitLabels[dimension] || `Dimension ${dimension + 1}`;
+                              return (
+                                <div key={idx} className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                      {dimensionLabel}
+                                    </span>
+                                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                      {Math.round(trait * 100)}%
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full transition-all duration-500"
+                                      style={{ width: `${trait * 100}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Overall Score - Enhanced */}
             <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-pink-900/20 dark:to-purple-900/20 dark:to-indigo-900/20 rounded-xl p-8 border border-pink-200 dark:border-pink-800">

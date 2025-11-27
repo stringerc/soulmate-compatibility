@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useId, useTransition } from 'react';
+import { useState, useEffect, useRef, useMemo, useId, useTransition, flushSync } from 'react';
 import { STORY_SCENARIOS, CHAPTER_THEMES, getCategoryChapters, getScenariosForChapter } from '@/lib/storyScenarios';
 import { Sparkles, Heart, Trophy, Star, CheckCircle2 } from 'lucide-react';
 import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOff, trackButtonClick } from '@/lib/analytics';
@@ -261,32 +261,38 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       ? currentConfidence 
       : 0.5;
     
-    // Use transition for state updates (non-urgent)
+    // CRITICAL: Immediate UI updates (navigation, visual feedback)
+    flushSync(() => {
+      // Navigate immediately (non-blocking)
+      if (currentScenarioIndex < currentScenarios.length - 1) {
+        setCurrentScenarioIndex(currentScenarioIndex + 1);
+      } else {
+        // Move to next chapter
+        if (currentChapterIndex < chapters.length - 1) {
+          setCurrentChapterIndex(currentChapterIndex + 1);
+          setCurrentScenarioIndex(0);
+        }
+      }
+      
+      // Reset for next scenario (immediate visual feedback)
+      setSelectedChoice(null);
+      setShowConfidence(false);
+    });
+    
+    // NON-URGENT: State updates (deferred)
     startTransition(() => {
       setResponses(newResponses);
       setConfidenceScores(newConfidence);
     });
     
-    // Navigate immediately (non-blocking)
-    if (currentScenarioIndex < currentScenarios.length - 1) {
-      setCurrentScenarioIndex(currentScenarioIndex + 1);
-    } else {
-      // Move to next chapter
-      if (currentChapterIndex < chapters.length - 1) {
-        setCurrentChapterIndex(currentChapterIndex + 1);
-        setCurrentScenarioIndex(0);
-        // Award badge for completing chapter (deferred)
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-          requestIdleCallback(() => {
-            awardBadge(`chapter-${currentChapterIndex + 1}`);
-          }, { timeout: 100 });
-        }
+    // DEFERRED: Badge awarding (non-critical)
+    if (currentScenarioIndex === currentScenarios.length - 1 && currentChapterIndex < chapters.length - 1) {
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+          awardBadge(`chapter-${currentChapterIndex + 1}`);
+        }, { timeout: 200 });
       }
     }
-    
-    // Reset for next scenario
-    setSelectedChoice(null);
-    setShowConfidence(false);
     
     // Defer heavy operations (localStorage, analytics, logging)
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {

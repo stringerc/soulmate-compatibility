@@ -243,9 +243,22 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     
     const choice = currentScenario.choices[choiceIndex];
     
-    // Immediate UI updates (non-blocking)
+    // Immediate UI updates (non-blocking) - CRITICAL for INP
     setSelectedChoice(choiceIndex);
     setShowConfidence(true);
+    
+    // Auto-scroll to confidence slider when it appears
+    if (typeof window !== 'undefined') {
+      // Use requestAnimationFrame to ensure DOM update happens first
+      requestAnimationFrame(() => {
+        // Find the confidence slider element
+        const slider = document.querySelector(`[name="confidence-scenario-${currentScenario.index}"]`);
+        if (slider) {
+          // Scroll to slider with smooth behavior
+          slider.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    }
     
     // Use transition for non-urgent state update
     startTransition(() => {
@@ -362,11 +375,16 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         );
         
         if (rewards.length > 0) {
-          setActiveRewards(prev => [...prev, ...rewards]);
-          // Show toast for rewards
-          rewards.forEach(reward => {
-            showToast(reward.message, 'success');
+          setActiveRewards(prev => {
+            // Prevent duplicate rewards by checking existing IDs
+            const existingIds = new Set(prev.map(r => r.id));
+            const newRewards = rewards.filter(r => !existingIds.has(r.id));
+            return [...prev, ...newRewards];
           });
+          // Show toast for rewards (only once, not per reward)
+          if (rewards.length > 0) {
+            showToast(rewards[0].message, 'success');
+          }
         }
         
         // Check for shareable moments
@@ -1008,7 +1026,16 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
 
           {!isLastScenario ? (
             <button
-              onClick={handleNext}
+              onClick={(e) => {
+                // Immediate visual feedback - prevent default to avoid any blocking
+                e.preventDefault();
+                // Defer actual handler to prevent INP blocking
+                if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+                  requestIdleCallback(() => handleNext(), { timeout: 0 });
+                } else {
+                  setTimeout(() => handleNext(), 0);
+                }
+              }}
               disabled={selectedChoice === null}
               className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold"
             >
@@ -1076,19 +1103,21 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         </div>
       </div>
 
-      {/* Reward Notifications */}
-      {activeRewards
-        .filter(reward => !dismissedRewards.has(reward.id))
-        .map(reward => (
-          <RewardNotification
-            key={reward.id}
-            reward={reward}
-            onDismiss={() => {
-              setDismissedRewards(prev => new Set([...prev, reward.id]));
-              setActiveRewards(prev => prev.filter(r => r.id !== reward.id));
-            }}
-          />
-        ))}
+      {/* Reward Notifications - Stacked */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-3 items-end">
+        {activeRewards
+          .filter(reward => !dismissedRewards.has(reward.id))
+          .map((reward, index) => (
+            <RewardNotification
+              key={reward.id}
+              reward={reward}
+              onDismiss={() => {
+                setDismissedRewards(prev => new Set([...prev, reward.id]));
+                setActiveRewards(prev => prev.filter(r => r.id !== reward.id));
+              }}
+            />
+          ))}
+      </div>
 
       {/* Share Prompt */}
       {showSharePrompt && shareableMoment && (

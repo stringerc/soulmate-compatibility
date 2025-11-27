@@ -47,7 +47,7 @@ export default function RewardNotification({ reward, onDismiss }: RewardNotifica
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg shadow-2xl p-4 min-w-[280px] max-w-sm transform transition-all duration-300 ${
+      className={`relative bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg shadow-2xl p-4 min-w-[280px] max-w-sm transform transition-all duration-300 ${
         isAnimating ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'
       }`}
     >

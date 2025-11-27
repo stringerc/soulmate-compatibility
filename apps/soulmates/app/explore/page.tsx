@@ -74,6 +74,27 @@ export default function ExplorePage() {
     traits: false
   });
 
+  // Memoize calculations to avoid hydration issues
+  const resultData = useMemo(() => {
+    if (!result || !selectedPartner) return null;
+    const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
+    const resultCompatibilityTier = getCompatibilityTier(result.snapshot.score_overall);
+    return { profile, resultCompatibilityTier };
+  }, [result, selectedPartner]);
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  // Trait dimension labels for visualization
+  const traitLabels = [
+    'Attachment Security', 'Conflict Style', 'Cognitive Processing',
+    'Value Alignment', 'Social Orientation', 'Intimacy Depth', 'Life Structure'
+  ];
+
   // Load user profile traits
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -599,24 +620,7 @@ export default function ExplorePage() {
         )}
 
         {/* Results Display */}
-        {result && selectedPartner && (() => {
-          const resultCompatibilityTier = getCompatibilityTier(result.snapshot.score_overall);
-          const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
-          
-          // Trait dimension labels for visualization
-          const traitLabels = [
-            'Attachment Security', 'Conflict Style', 'Cognitive Processing',
-            'Value Alignment', 'Social Orientation', 'Intimacy Depth', 'Life Structure'
-          ];
-
-          const toggleSection = (section: string) => {
-            setExpandedSections(prev => ({
-              ...prev,
-              [section]: !prev[section]
-            }));
-          };
-
-          return (
+        {resultData && resultData.profile && (
           <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-8 space-y-8">
             {/* Header with Share */}
             <div className="flex items-center justify-between">
@@ -625,7 +629,7 @@ export default function ExplorePage() {
                   Compatibility Results
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {profile?.name || 'Unknown Archetype'}
+                  {resultData.profile.name}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -655,44 +659,48 @@ export default function ExplorePage() {
             </div>
 
             {/* Archetype Profile Details - Enhanced */}
-            {profile && (
-                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 shadow-xl overflow-hidden">
-                  {/* Profile Header */}
-                  <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 text-white">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                        <profile.icon className="w-8 h-8" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-2xl font-bold mb-1">{profile.name}</h3>
-                        <div className="flex flex-wrap gap-2 text-sm">
-                          <span className="px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm">
-                            {profile.archetype}
-                          </span>
-                          <span className="px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm flex items-center gap-1">
-                            <Shield className="w-3 h-3" />
-                            {profile.attachmentStyle} Attachment
-                          </span>
-                        </div>
+            <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 shadow-xl overflow-hidden">
+              {/* Profile Header */}
+              <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 text-white">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <resultData.profile.icon className="w-8 h-8" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold mb-1">{resultData.profile.name}</h3>
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      <span className="px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm">
+                        {resultData.profile.archetype}
+                      </span>
+                      <span className="px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm flex items-center gap-1">
+                        <Shield className="w-3 h-3" />
+                        {resultData.profile.attachmentStyle} Attachment
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Full Description - Always Visible */}
+                <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-5 border border-indigo-200 dark:border-indigo-800">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        About This Archetype
+                      </h4>
+                      <div className="text-gray-700 dark:text-gray-300 leading-relaxed space-y-3">
+                        <p className="text-base">
+                          {resultData.profile.description}
+                        </p>
+                        <p className="text-sm opacity-90">
+                          Understanding what it means to be {resultData.profile.name} goes beyond surface-level traits. This archetype represents a fundamental way of being in the world, shaped by deep psychological patterns, attachment styles, and core values that influence every aspect of how you love, relate, and grow.
+                        </p>
                       </div>
                     </div>
                   </div>
-
-                  <div className="p-6 space-y-4">
-                    {/* Full Description - Always Visible */}
-                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-5 border border-indigo-200 dark:border-indigo-800">
-                      <div className="flex items-start gap-3">
-                        <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                            About This Archetype
-                          </h4>
-                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                            {profile.description}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                </div>
 
                     {/* Strengths - Expandable */}
                     <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-indigo-200 dark:border-indigo-800 overflow-hidden">
@@ -708,7 +716,7 @@ export default function ExplorePage() {
                             Core Strengths
                           </h4>
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            ({profile.strengths.length} traits)
+                            ({resultData.profile.strengths.length} traits)
                           </span>
                         </div>
                         {expandedSections.strengths ? (
@@ -718,11 +726,16 @@ export default function ExplorePage() {
                         )}
                       </button>
                       {expandedSections.strengths && (
-                        <div className="px-5 pb-5 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                          {profile.strengths.map((strength, idx) => (
-                            <div key={idx} className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
-                              <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                              <p className="text-gray-700 dark:text-gray-300 text-sm">{strength}</p>
+                        <div className="px-5 pb-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                          {resultData.profile.strengths.map((strength, idx) => (
+                            <div key={idx} className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-900/10 rounded-lg">
+                              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium mb-1">{strength}</p>
+                                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                                  This strength manifests in your daily life through consistent actions and patterns. It's not just a trait you possess, but a fundamental part of how you navigate relationships, make decisions, and contribute to the world around you. Understanding this about yourself helps you recognize your value and leverage these natural abilities in meaningful ways.
+                                </p>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -743,7 +756,7 @@ export default function ExplorePage() {
                             Growth Areas
                           </h4>
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            ({profile.challenges.length} areas)
+                            ({resultData.profile.challenges.length} areas)
                           </span>
                         </div>
                         {expandedSections.challenges ? (
@@ -753,11 +766,18 @@ export default function ExplorePage() {
                         )}
                       </button>
                       {expandedSections.challenges && (
-                        <div className="px-5 pb-5 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                          {profile.challenges.map((challenge, idx) => (
-                            <div key={idx} className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
-                              <div className="w-4 h-4 rounded-full border-2 border-amber-600 dark:border-amber-400 mt-0.5 flex-shrink-0" />
-                              <p className="text-gray-700 dark:text-gray-300 text-sm">{challenge}</p>
+                        <div className="px-5 pb-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                          {resultData.profile.challenges.map((challenge, idx) => (
+                            <div key={idx} className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
+                              <div className="w-5 h-5 rounded-full border-2 border-amber-600 dark:border-amber-400 mt-0.5 flex-shrink-0 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-amber-600 dark:bg-amber-400" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium mb-1">{challenge}</p>
+                                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                                  Growth areas are not weaknesses—they're opportunities for deeper self-awareness and development. This challenge likely stems from your core personality patterns and can be understood as a natural extension of your strengths. By recognizing this pattern, you can develop strategies to navigate it more consciously and create more fulfilling relationships and experiences.
+                                </p>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -778,7 +798,7 @@ export default function ExplorePage() {
                             Ideal Matches
                           </h4>
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            ({profile.idealMatch.length} archetypes)
+                            ({resultData.profile.idealMatch.length} archetypes)
                           </span>
                         </div>
                         {expandedSections.idealMatches ? (
@@ -788,31 +808,36 @@ export default function ExplorePage() {
                         )}
                       </button>
                       {expandedSections.idealMatches && (
-                        <div className="px-5 pb-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            These archetypes complement {profile.name} best, creating balanced and harmonious relationships:
-                          </p>
+                        <div className="px-5 pb-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                          <div className="bg-pink-50 dark:bg-pink-900/10 rounded-lg p-4 mb-3">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
+                              These archetypes complement {resultData.profile.name} best, creating balanced and harmonious relationships. Compatibility isn't about finding someone identical to you—it's about finding someone whose strengths complement your growth areas, and whose values align with your core needs.
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 italic">
+                              Click on any archetype below to explore your compatibility in detail.
+                            </p>
+                          </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {profile.idealMatch.map((matchName) => {
+                            {resultData.profile.idealMatch.map((matchName) => {
                               const matchProfile = ARCHETYPAL_PROFILES.find(p => p.name === matchName);
                               if (!matchProfile) return null;
                               const MatchIcon = matchProfile.icon;
                               return (
                                 <div
                                   key={matchName}
-                                  className="flex items-center gap-3 p-3 bg-pink-50 dark:bg-pink-900/10 rounded-lg border border-pink-200 dark:border-pink-800 hover:bg-pink-100 dark:hover:bg-pink-900/20 transition-colors cursor-pointer"
+                                  className="flex items-center gap-3 p-4 bg-pink-50 dark:bg-pink-900/10 rounded-lg border border-pink-200 dark:border-pink-800 hover:bg-pink-100 dark:hover:bg-pink-900/20 transition-all cursor-pointer shadow-sm hover:shadow-md"
                                   onClick={() => {
                                     handleExplore(matchProfile.id);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                   }}
                                 >
                                   <div className="p-2 bg-pink-200 dark:bg-pink-800 rounded-lg">
-                                    <MatchIcon className="w-4 h-4 text-pink-700 dark:text-pink-300" />
+                                    <MatchIcon className="w-5 h-5 text-pink-700 dark:text-pink-300" />
                                   </div>
-                                  <span className="font-medium text-gray-900 dark:text-white text-sm">
+                                  <span className="font-medium text-gray-900 dark:text-white">
                                     {matchName}
                                   </span>
-                                  <ArrowRight className="w-4 h-4 text-pink-600 dark:text-pink-400 ml-auto" />
+                                  <ArrowRight className="w-5 h-5 text-pink-600 dark:text-pink-400 ml-auto" />
                                 </div>
                               );
                             })}
@@ -831,8 +856,8 @@ export default function ExplorePage() {
                           Love Languages
                         </h4>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.loveLanguages.map((lang, idx) => (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {resultData.profile.loveLanguages.map((lang, idx) => (
                           <span
                             key={idx}
                             className="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium border border-purple-200 dark:border-purple-800"
@@ -841,9 +866,14 @@ export default function ExplorePage() {
                           </span>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
-                        These are the primary ways this archetype expresses and receives love
-                      </p>
+                      <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <p className="leading-relaxed">
+                          Love languages represent the primary ways this archetype expresses and receives love. Understanding your love languages helps you communicate your needs more effectively and recognize when others are showing you love, even if it's not in your preferred style.
+                        </p>
+                        <p className="text-xs italic opacity-80">
+                          Each love language represents a different pathway to emotional connection and intimacy. When you understand both your own and your partner's love languages, you can create deeper, more fulfilling relationships.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Trait Dimensions - Expandable */}
@@ -874,26 +904,34 @@ export default function ExplorePage() {
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                             This archetype's personality profile across 32 psychological dimensions:
                           </p>
+                          <div className="bg-blue-50 dark:bg-blue-900/10 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                              Your personality is mapped across 32 psychological dimensions, each representing a different aspect of how you think, feel, and relate to others. These dimensions combine to create your unique archetypal profile. Understanding these dimensions helps you see the complexity and depth of your personality beyond simple labels.
+                            </p>
+                          </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {profile.traits.map((trait, idx) => {
+                            {resultData.profile.traits.map((trait, idx) => {
                               const dimension = Math.floor(idx / 4.57); // Approximate grouping
                               const dimensionLabel = traitLabels[dimension] || `Dimension ${dimension + 1}`;
                               return (
-                                <div key={idx} className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
+                                <div key={idx} className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                       {dimensionLabel}
                                     </span>
-                                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
                                       {Math.round(trait * 100)}%
                                     </span>
                                   </div>
-                                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-2">
                                     <div
                                       className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full transition-all duration-500"
                                       style={{ width: `${trait * 100}%` }}
                                     />
                                   </div>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                    This dimension reflects how you typically approach this aspect of life and relationships.
+                                  </p>
                                 </div>
                               );
                             })}
@@ -921,9 +959,9 @@ export default function ExplorePage() {
                   style={{ width: `${result.snapshot.score_overall * 100}%` }}
                 />
               </div>
-              {resultCompatibilityTier && (
+              {resultData.resultCompatibilityTier && (
                 <p className="text-center mt-4 text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {resultCompatibilityTier.label}
+                  {resultData.resultCompatibilityTier.label}
                 </p>
               )}
             </div>
@@ -1025,8 +1063,7 @@ export default function ExplorePage() {
               </div>
             </div>
           </div>
-          );
-        })()}
+        )}
       </div>
     </div>
   );

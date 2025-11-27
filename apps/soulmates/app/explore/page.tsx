@@ -423,7 +423,7 @@ export default function ExplorePage() {
               )}
               {result.snapshot.num_used && (
                 <span className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 rounded-full text-sm font-medium flex items-center gap-2">
-                  <Brain className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4" />
                   Numerology
                 </span>
               )}

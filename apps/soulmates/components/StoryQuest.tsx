@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useId } from 'react';
+import { useState, useEffect, useRef, useMemo, useId, useTransition } from 'react';
 import { STORY_SCENARIOS, CHAPTER_THEMES, getCategoryChapters, getScenariosForChapter } from '@/lib/storyScenarios';
 import { Sparkles, Heart, Trophy, Star, CheckCircle2 } from 'lucide-react';
 import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOff, trackButtonClick } from '@/lib/analytics';
@@ -33,6 +33,9 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   
   // Toast notifications
   const { showToast, ToastComponent } = useToast();
+  
+  // Use transition for non-urgent state updates
+  const [isPending, startTransition] = useTransition();
   
   // Load saved progress from localStorage
   const loadSavedProgress = () => {
@@ -189,34 +192,22 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     setSelectedChoice(choiceIndex);
     setShowConfidence(true);
     
-    // Defer state update and validation
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      requestIdleCallback(() => {
-        // Update response - ensure array is correct size
-        const newResponses = [...responses];
-        // Ensure array is the right size
-        while (newResponses.length < TOTAL_SCENARIOS) {
-          newResponses.push(0.5);
-        }
-        // Update the specific scenario response
-        if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
-          newResponses[currentScenario.index] = choice.value;
-          setResponses(newResponses);
-        } else {
-          console.error(`Invalid scenario index: ${currentScenario.index} (should be 0-${TOTAL_SCENARIOS - 1})`);
-        }
-      }, { timeout: 50 });
-    } else {
-      // Fallback: immediate update
+    // Use transition for non-urgent state update
+    startTransition(() => {
+      // Update response - ensure array is correct size
       const newResponses = [...responses];
+      // Ensure array is the right size
       while (newResponses.length < TOTAL_SCENARIOS) {
         newResponses.push(0.5);
       }
+      // Update the specific scenario response
       if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
         newResponses[currentScenario.index] = choice.value;
         setResponses(newResponses);
+      } else {
+        console.error(`Invalid scenario index: ${currentScenario.index} (should be 0-${TOTAL_SCENARIOS - 1})`);
       }
-    }
+    });
   };
 
   const handleConfidenceChange = (confidence: number) => {
@@ -270,9 +261,11 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       ? currentConfidence 
       : 0.5;
     
-    // Update state immediately (synchronous)
-    setResponses(newResponses);
-    setConfidenceScores(newConfidence);
+    // Use transition for state updates (non-urgent)
+    startTransition(() => {
+      setResponses(newResponses);
+      setConfidenceScores(newConfidence);
+    });
     
     // Navigate immediately (non-blocking)
     if (currentScenarioIndex < currentScenarios.length - 1) {

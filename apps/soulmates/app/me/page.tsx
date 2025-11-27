@@ -28,8 +28,8 @@ export default function DashboardPage() {
         // Extract profile from response (could be { profile: {...} } or just {...})
         let profileData = (profileResponse as any)?.profile || profileResponse;
         
-        // Fallback to localStorage if backend unavailable or no profile
-        if (!profileData || (profileData === null && typeof window !== 'undefined')) {
+        // Always check localStorage as fallback (even if API returns something, localStorage might be more recent)
+        if (typeof window !== 'undefined') {
           try {
             const localProfile = localStorage.getItem('soulmates_profile');
             if (localProfile) {
@@ -37,8 +37,19 @@ export default function DashboardPage() {
               // Only use if it's recent (within 7 days)
               const daysSince = (Date.now() - (parsed.calculated_at || 0)) / (1000 * 60 * 60 * 24);
               if (daysSince < 7) {
-                profileData = parsed;
-                console.log("Loaded profile from localStorage fallback");
+                // Prefer localStorage if API returned null/empty, or if localStorage is more recent
+                if (!profileData || 
+                    profileData === null || 
+                    (typeof profileData === 'object' && Object.keys(profileData).length === 0) ||
+                    !profileData.primary_archetype || 
+                    (parsed.calculated_at > (profileData.calculated_at || 0))) {
+                  profileData = parsed;
+                  console.log("✅ Loaded profile from localStorage fallback", {
+                    primary_archetype: profileData.primary_archetype,
+                    attachment_style: profileData.attachment_style,
+                    love_languages: profileData.love_languages,
+                  });
+                }
               } else {
                 localStorage.removeItem('soulmates_profile');
               }
@@ -47,6 +58,14 @@ export default function DashboardPage() {
             console.error("Failed to load profile from localStorage:", e);
           }
         }
+        
+        // Debug logging
+        console.log("📊 Dashboard profile data:", {
+          hasProfile: !!profileData,
+          primary_archetype: profileData?.primary_archetype,
+          attachment_style: profileData?.attachment_style,
+          love_languages: profileData?.love_languages,
+        });
         
         setProfile(profileData);
         setSubscription(subscriptionData);

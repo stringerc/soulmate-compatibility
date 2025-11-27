@@ -83,22 +83,32 @@ export default function OnboardingPage() {
         }, { timeout: 200 });
       }
 
+      // Always store in localStorage as fallback (even if backend saved successfully)
+      if (typeof window !== 'undefined') {
+        try {
+          const profileToStore = {
+            ...(result?.profile || {}),
+            traits: traits,
+            primary_archetype: result?.profile?.primary_archetype || (await import("@/lib/profileCalculations")).calculatePrimaryArchetype(traits),
+            attachment_style: result?.profile?.attachment_style || (await import("@/lib/profileCalculations")).calculateAttachmentStyle(traits),
+            love_languages: result?.profile?.love_languages || (await import("@/lib/profileCalculations")).calculateLoveLanguages(traits),
+            calculated_at: Date.now(),
+          };
+          
+          localStorage.setItem('soulmates_profile', JSON.stringify(profileToStore));
+          console.log("✅ Profile stored in localStorage for dashboard", {
+            primary_archetype: profileToStore.primary_archetype,
+            attachment_style: profileToStore.attachment_style,
+            love_languages: profileToStore.love_languages,
+          });
+        } catch (e) {
+          console.error("Failed to store profile in localStorage:", e);
+        }
+      }
+      
       // Show success message if saved locally
       if (result?.profile?.saved_locally) {
         console.log("Profile saved locally (backend unavailable)");
-        // Store in localStorage as fallback for dashboard
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('soulmates_profile', JSON.stringify({
-              ...result.profile,
-              traits: traits,
-              calculated_at: Date.now(),
-            }));
-            console.log("Profile stored in localStorage for dashboard");
-          } catch (e) {
-            console.error("Failed to store profile in localStorage:", e);
-          }
-        }
       }
 
       // Redirect to dashboard

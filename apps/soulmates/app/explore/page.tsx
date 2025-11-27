@@ -601,6 +601,21 @@ export default function ExplorePage() {
         {/* Results Display */}
         {result && selectedPartner && (() => {
           const resultCompatibilityTier = getCompatibilityTier(result.snapshot.score_overall);
+          const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
+          
+          const toggleSection = (section: string) => {
+            setExpandedSections(prev => ({
+              ...prev,
+              [section]: !prev[section]
+            }));
+          };
+
+          // Trait dimension labels for visualization
+          const traitLabels = [
+            'Attachment Security', 'Conflict Style', 'Cognitive Processing',
+            'Value Alignment', 'Social Orientation', 'Intimacy Depth', 'Life Structure'
+          ];
+
           return (
           <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-8 space-y-8">
             {/* Header with Share */}
@@ -610,7 +625,7 @@ export default function ExplorePage() {
                   Compatibility Results
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner)?.name}
+                  {profile?.name || 'Unknown Archetype'}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -640,22 +655,7 @@ export default function ExplorePage() {
             </div>
 
             {/* Archetype Profile Details - Enhanced */}
-            {(() => {
-              const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
-              if (!profile) return null;
-
-              const toggleSection = (section: string) => {
-                setExpandedSections(prev => ({
-                  ...prev,
-                  [section]: !prev[section]
-                }));
-              };
-
-              // Trait dimension labels for visualization
-              const traitLabels = [
-                'Attachment Security', 'Conflict Style', 'Cognitive Processing',
-                'Value Alignment', 'Social Orientation', 'Intimacy Depth', 'Life Structure'
-              ];
+            {profile && (
 
               return (
                 <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 shadow-xl overflow-hidden">
@@ -905,8 +905,7 @@ export default function ExplorePage() {
                     </div>
                   </div>
                 </div>
-              );
-            })()}
+            )}
 
             {/* Overall Score - Enhanced */}
             <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-pink-900/20 dark:to-purple-900/20 dark:to-indigo-900/20 rounded-xl p-8 border border-pink-200 dark:border-pink-800">

@@ -228,27 +228,33 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     }
   }, [currentScenario, currentScenarioIndex, currentChapterIndex, confidenceScores]);
 
-  // Auto-scroll when confidence slider appears
+  // Auto-scroll when confidence slider appears (only when it becomes true, not false)
+  const prevShowConfidence = useRef(false);
   useEffect(() => {
-    if (showConfidence && currentScenario) {
+    // Only scroll when showConfidence transitions from false to true
+    if (showConfidence && !prevShowConfidence.current && currentScenario) {
       // Use requestAnimationFrame to ensure DOM update happens first
       requestAnimationFrame(() => {
         // Find the confidence slider element
         const slider = document.querySelector(`[name="confidence-scenario-${currentScenario.index}"]`);
         if (slider) {
-          // Scroll to slider with smooth behavior, ensuring Continue button is visible
-          slider.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Scroll to ensure both slider and Continue button are visible
+          // Use 'nearest' to avoid over-scrolling
+          slider.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           
-          // Also scroll to navigation section to ensure Continue button is visible
+          // After a short delay, ensure navigation section (with Continue button) is visible
           setTimeout(() => {
             const navSection = document.querySelector('[class*="flex justify-between items-center"]');
             if (navSection) {
+              // Use 'nearest' to avoid scrolling away from the slider
               navSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
-          }, 100);
+          }, 300);
         }
       });
     }
+    // Update ref for next render
+    prevShowConfidence.current = showConfidence;
   }, [showConfidence, currentScenario]);
 
   // Track drop-off on unmount
@@ -270,18 +276,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     setSelectedChoice(choiceIndex);
     setShowConfidence(true);
     
-    // Auto-scroll to confidence slider when it appears
-    if (typeof window !== 'undefined') {
-      // Use requestAnimationFrame to ensure DOM update happens first
-      requestAnimationFrame(() => {
-        // Find the confidence slider element
-        const slider = document.querySelector(`[name="confidence-scenario-${currentScenario.index}"]`);
-        if (slider) {
-          // Scroll to slider with smooth behavior
-          slider.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      });
-    }
+    // Note: Auto-scroll is handled by useEffect to avoid duplicate scrolling
     
     // Use transition for non-urgent state update
     startTransition(() => {

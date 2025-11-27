@@ -34,11 +34,26 @@ export default function OnboardingPage() {
     setPersonConfidence(confidence);
 
     try {
+      // Calculate archetype and attachment style from traits
+      const { 
+        calculatePrimaryArchetype, 
+        calculateAttachmentStyle, 
+        calculateLoveLanguages 
+      } = await import("@/lib/profileCalculations");
+      
+      const primaryArchetype = calculatePrimaryArchetype(traits);
+      const attachmentStyle = calculateAttachmentStyle(traits);
+      const loveLanguages = calculateLoveLanguages(traits);
+      
       // Save profile to backend (with timeout)
       const { profileApi } = await import("@/lib/api");
       
       // Use Promise.race to add timeout
       const savePromise = profileApi.createOrUpdate({
+        traits: traits, // Save the full traits array
+        primary_archetype: primaryArchetype,
+        attachment_style: attachmentStyle,
+        love_languages: loveLanguages,
         astrology_meta: birthdate ? { birthdate } : undefined,
         numerology_meta: birthdate ? { birthdate } : undefined,
       });

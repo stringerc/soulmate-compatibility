@@ -20,11 +20,13 @@ export default function DashboardPage() {
         
         // Load profile
         const { profileApi, billingApi } = await import("@/lib/api");
-        const [profileData, subscriptionData] = await Promise.all([
+        const [profileResponse, subscriptionData] = await Promise.all([
           profileApi.get().catch(() => null),
           billingApi.getSubscription().catch(() => ({ tier: "FREE" })),
         ]);
         
+        // Extract profile from response (could be { profile: {...} } or just {...})
+        const profileData = profileResponse?.profile || profileResponse;
         setProfile(profileData);
         setSubscription(subscriptionData);
         

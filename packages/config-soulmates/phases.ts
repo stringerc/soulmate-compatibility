@@ -47,13 +47,14 @@ export function isFeatureEnabled(
 
 /**
  * Get the current soulmates phase from environment
- * Defaults to 0 (MVP) if not set or invalid
+ * Defaults to 3 (all features) if not set or invalid, since all features are implemented
+ * Can be overridden via environment variable for gradual rollout
  */
 export function getSoulmatesPhase(): SoulmatesPhase {
-  const raw = process.env.SOULMATES_PHASE ?? process.env.NEXT_PUBLIC_SOULMATES_PHASE ?? "0";
+  const raw = process.env.SOULMATES_PHASE ?? process.env.NEXT_PUBLIC_SOULMATES_PHASE ?? "3";
   const n = Number(raw);
   if (n === 0 || n === 1 || n === 2 || n === 3) return n;
-  return 0;
+  return 3; // Default to Phase 3 (all features) since they're all implemented
 }
 
 /**

@@ -26,7 +26,28 @@ export default function DashboardPage() {
         ]);
         
         // Extract profile from response (could be { profile: {...} } or just {...})
-        const profileData = (profileResponse as any)?.profile || profileResponse;
+        let profileData = (profileResponse as any)?.profile || profileResponse;
+        
+        // Fallback to localStorage if backend unavailable or no profile
+        if (!profileData || (profileData === null && typeof window !== 'undefined')) {
+          try {
+            const localProfile = localStorage.getItem('soulmates_profile');
+            if (localProfile) {
+              const parsed = JSON.parse(localProfile);
+              // Only use if it's recent (within 7 days)
+              const daysSince = (Date.now() - (parsed.calculated_at || 0)) / (1000 * 60 * 60 * 24);
+              if (daysSince < 7) {
+                profileData = parsed;
+                console.log("Loaded profile from localStorage fallback");
+              } else {
+                localStorage.removeItem('soulmates_profile');
+              }
+            }
+          } catch (e) {
+            console.error("Failed to load profile from localStorage:", e);
+          }
+        }
+        
         setProfile(profileData);
         setSubscription(subscriptionData);
         

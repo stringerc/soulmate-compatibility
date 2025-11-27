@@ -227,7 +227,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       return;
     }
     
-    // CRITICAL FIX: Ensure current response is saved before navigating
+    // Immediate UI updates (non-blocking)
     const choice = currentScenario.choices[selectedChoice];
     const newResponses = [...responses];
     const newConfidence = [...confidenceScores];
@@ -240,10 +240,9 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       newConfidence.push(0.5);
     }
     
-    // Validate scenario index
+    // Validate scenario index (quick check)
     if (currentScenario.index < 0 || currentScenario.index >= TOTAL_SCENARIOS) {
-      console.error(`[handleNext] Invalid scenario index: ${currentScenario.index} (should be 0-${TOTAL_SCENARIOS - 1})`);
-      alert(`Error: Invalid scenario index. Please refresh the page.`);
+      console.error(`[handleNext] Invalid scenario index: ${currentScenario.index}`);
       return;
     }
     
@@ -260,32 +259,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     setResponses(newResponses);
     setConfidenceScores(newConfidence);
     
-    // CRITICAL FIX: Save progress immediately before navigation
-    try {
-      if (typeof window !== 'undefined') {
-        const progressData = {
-          responses: newResponses,
-          confidenceScores: newConfidence,
-          birthdate,
-          name,
-          currentChapterIndex,
-          currentScenarioIndex,
-          badges,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
-        
-        // Log completion analysis for debugging
-        const analysis = analyzeCompletion(newResponses);
-        console.log(`[handleNext] Scenario ${currentScenario.index} saved. Progress: ${analysis.answeredCount}/${analysis.totalScenarios}`);
-      }
-    } catch (e) {
-      console.error('[handleNext] Failed to save progress:', e);
-    }
-    
-    trackButtonClick('Continue Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
-    
-    // Check if we've completed all scenarios in this chapter
+    // Navigate immediately (non-blocking)
     if (currentScenarioIndex < currentScenarios.length - 1) {
       setCurrentScenarioIndex(currentScenarioIndex + 1);
     } else {
@@ -293,14 +267,64 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       if (currentChapterIndex < chapters.length - 1) {
         setCurrentChapterIndex(currentChapterIndex + 1);
         setCurrentScenarioIndex(0);
-        // Award badge for completing chapter
-        awardBadge(`chapter-${currentChapterIndex + 1}`);
+        // Award badge for completing chapter (deferred)
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          requestIdleCallback(() => {
+            awardBadge(`chapter-${currentChapterIndex + 1}`);
+          }, { timeout: 100 });
+        }
       }
     }
     
     // Reset for next scenario
     setSelectedChoice(null);
     setShowConfidence(false);
+    
+    // Defer heavy operations (localStorage, analytics, logging)
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        try {
+          const progressData = {
+            responses: newResponses,
+            confidenceScores: newConfidence,
+            birthdate,
+            name,
+            currentChapterIndex,
+            currentScenarioIndex,
+            badges,
+            timestamp: Date.now(),
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+          
+          // Log completion analysis for debugging
+          const analysis = analyzeCompletion(newResponses);
+          console.log(`[handleNext] Scenario ${currentScenario.index} saved. Progress: ${analysis.answeredCount}/${analysis.totalScenarios}`);
+        } catch (e) {
+          console.error('[handleNext] Failed to save progress:', e);
+        }
+        
+        trackButtonClick('Continue Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
+      }, { timeout: 100 });
+    } else {
+      // Fallback for browsers without requestIdleCallback
+      setTimeout(() => {
+        try {
+          const progressData = {
+            responses: newResponses,
+            confidenceScores: newConfidence,
+            birthdate,
+            name,
+            currentChapterIndex,
+            currentScenarioIndex,
+            badges,
+            timestamp: Date.now(),
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+        } catch (e) {
+          console.error('[handleNext] Failed to save progress:', e);
+        }
+      }, 0);
+    }
   };
 
   const handlePrevious = () => {

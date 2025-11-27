@@ -86,6 +86,19 @@ export default function OnboardingPage() {
       // Show success message if saved locally
       if (result?.profile?.saved_locally) {
         console.log("Profile saved locally (backend unavailable)");
+        // Store in localStorage as fallback for dashboard
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('soulmates_profile', JSON.stringify({
+              ...result.profile,
+              traits: traits,
+              calculated_at: Date.now(),
+            }));
+            console.log("Profile stored in localStorage for dashboard");
+          } catch (e) {
+            console.error("Failed to store profile in localStorage:", e);
+          }
+        }
       }
 
       // Redirect to dashboard

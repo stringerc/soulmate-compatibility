@@ -184,24 +184,39 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     if (!currentScenario) return;
     
     const choice = currentScenario.choices[choiceIndex];
+    
+    // Immediate UI updates (non-blocking)
     setSelectedChoice(choiceIndex);
-    
-    // Update response - ensure array is correct size
-    const newResponses = [...responses];
-    // Ensure array is the right size
-    while (newResponses.length < TOTAL_SCENARIOS) {
-      newResponses.push(0.5);
-    }
-    // Update the specific scenario response
-    if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
-      newResponses[currentScenario.index] = choice.value;
-      setResponses(newResponses);
-    } else {
-      console.error(`Invalid scenario index: ${currentScenario.index} (should be 0-${TOTAL_SCENARIOS - 1})`);
-    }
-    
-    // Show confidence slider
     setShowConfidence(true);
+    
+    // Defer state update and validation
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        // Update response - ensure array is correct size
+        const newResponses = [...responses];
+        // Ensure array is the right size
+        while (newResponses.length < TOTAL_SCENARIOS) {
+          newResponses.push(0.5);
+        }
+        // Update the specific scenario response
+        if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+          newResponses[currentScenario.index] = choice.value;
+          setResponses(newResponses);
+        } else {
+          console.error(`Invalid scenario index: ${currentScenario.index} (should be 0-${TOTAL_SCENARIOS - 1})`);
+        }
+      }, { timeout: 50 });
+    } else {
+      // Fallback: immediate update
+      const newResponses = [...responses];
+      while (newResponses.length < TOTAL_SCENARIOS) {
+        newResponses.push(0.5);
+      }
+      if (currentScenario.index >= 0 && currentScenario.index < TOTAL_SCENARIOS) {
+        newResponses[currentScenario.index] = choice.value;
+        setResponses(newResponses);
+      }
+    }
   };
 
   const handleConfidenceChange = (confidence: number) => {

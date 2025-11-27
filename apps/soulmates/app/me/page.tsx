@@ -5,6 +5,7 @@ import Link from "next/link";
 import { logSoulmatesEvent } from "@/lib/analytics";
 import { billingApi } from "@/lib/api";
 import PlanBadge from "@/components/PlanBadge";
+import ReferralProgram from "@/components/ReferralProgram";
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -199,6 +200,11 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Referral Program */}
+        <div className="mb-8">
+          <ReferralProgram userId={profile?.id} />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link 

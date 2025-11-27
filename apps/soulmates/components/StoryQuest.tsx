@@ -8,6 +8,21 @@ import { analyzeCompletion, validateCompletion, autoFillMissingResponses } from 
 import { performDeepAnalysis, generateFixScript } from '@/lib/deepCompletionAnalysis';
 import CompletionDebugger from './CompletionDebugger';
 import { useToast } from './Toast';
+import { 
+  NarrativeState, 
+  generateNarrativeHook, 
+  updateNarrativeState,
+  getRelationshipStage,
+  getNarrativeArc
+} from '@/lib/narrativeEngine';
+import { checkRewards, Reward } from '@/lib/rewardSystem';
+import { 
+  shouldShowSharePrompt, 
+  generateShareableMoment, 
+  ShareableMoment 
+} from '@/lib/shareableMoments';
+import RewardNotification from './RewardNotification';
+import SharePrompt from './SharePrompt';
 
 interface StoryQuestProps {
   personNumber: number;
@@ -103,9 +118,33 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   const [compatibilityPower, setCompatibilityPower] = useState(0);
   const [showResumePrompt, setShowResumePrompt] = useState(!!savedProgress);
   
+  // Narrative state for story continuity
+  const [narrativeState, setNarrativeState] = useState<NarrativeState>(() => {
+    if (savedProgress?.narrativeState) {
+      return savedProgress.narrativeState;
+    }
+    return {
+      relationshipStage: 'first_meeting',
+      emotionalTone: 'excited',
+      partnerTraits: [],
+      previousScenarios: savedProgress?.responses?.map((r: number, i: number) => r !== 0.5 ? i : -1).filter((i: number) => i >= 0) || [],
+      emotionalMoments: [],
+      narrativeArc: 'setup'
+    };
+  });
+  
+  // Reward system
+  const [activeRewards, setActiveRewards] = useState<Reward[]>([]);
+  const [dismissedRewards, setDismissedRewards] = useState<Set<string>>(new Set());
+  
+  // Shareable moments
+  const [shareableMoment, setShareableMoment] = useState<ShareableMoment | null>(null);
+  const [showSharePrompt, setShowSharePrompt] = useState(false);
+  
   // Track time spent on current scenario
   const scenarioStartTime = useRef<number>(Date.now());
   const lastScenarioIndex = useRef<number>(currentScenarioIndex);
+  const previousChoice = useRef<{ text: string; value: number } | null>(null);
 
   // Memoize expensive calculations
   const chapters = useMemo(() => getCategoryChapters(), []);
@@ -157,21 +196,37 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     setCompatibilityPower(Math.round((answered / TOTAL_SCENARIOS) * 100));
   }, [responses, TOTAL_SCENARIOS]);
 
-  // Track scenario changes
+  // Track scenario changes and update narrative state
   useEffect(() => {
     if (currentScenario) {
       // Track completion of previous scenario
-      if (lastScenarioIndex.current !== currentScenarioIndex) {
+      if (lastScenarioIndex.current !== currentScenarioIndex && previousChoice.current) {
         const timeSpent = Date.now() - scenarioStartTime.current;
         trackScenarioComplete(lastScenarioIndex.current, currentChapter || '', timeSpent);
+        
+        // Update narrative state based on previous choice
+        const emotionalIntensity = confidenceScores[lastScenarioIndex.current] || 0.5;
+        setNarrativeState(prev => updateNarrativeState(
+          prev,
+          lastScenarioIndex.current,
+          previousChoice.current!.value,
+          emotionalIntensity
+        ));
       }
       
       // Track start of new scenario
       scenarioStartTime.current = Date.now();
       lastScenarioIndex.current = currentScenarioIndex;
       trackScenarioStart(currentScenario.index, currentChapter || '');
+      
+      // Update narrative state for current scenario
+      setNarrativeState(prev => ({
+        ...prev,
+        relationshipStage: getRelationshipStage(currentScenario.index),
+        narrativeArc: getNarrativeArc(currentScenario.index)
+      }));
     }
-  }, [currentScenario, currentScenarioIndex, currentChapterIndex]);
+  }, [currentScenario, currentScenarioIndex, currentChapterIndex, confidenceScores]);
 
   // Track drop-off on unmount
   useEffect(() => {
@@ -261,15 +316,26 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       ? currentConfidence 
       : 0.5;
     
+    // Store previous choice for narrative continuity
+    previousChoice.current = { text: choice.text, value: choice.value };
+    
+    // Calculate next scenario/chapter indices
+    const nextScenarioIndex = currentScenarioIndex < currentScenarios.length - 1 
+      ? currentScenarioIndex + 1 
+      : 0;
+    const nextChapterIndex = currentScenarioIndex < currentScenarios.length - 1
+      ? currentChapterIndex
+      : currentChapterIndex + 1;
+    const isChapterComplete = currentScenarioIndex === currentScenarios.length - 1;
+    
     // CRITICAL: Immediate UI updates (navigation, visual feedback)
-    // Use direct state updates for immediate feedback (React will batch these)
     // Navigate immediately (non-blocking)
     if (currentScenarioIndex < currentScenarios.length - 1) {
-      setCurrentScenarioIndex(currentScenarioIndex + 1);
+      setCurrentScenarioIndex(nextScenarioIndex);
     } else {
       // Move to next chapter
       if (currentChapterIndex < chapters.length - 1) {
-        setCurrentChapterIndex(currentChapterIndex + 1);
+        setCurrentChapterIndex(nextChapterIndex);
         setCurrentScenarioIndex(0);
       }
     }
@@ -284,8 +350,48 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       setConfidenceScores(newConfidence);
     });
     
+    // DEFERRED: Check for rewards (non-critical)
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        const emotionalIntensity = newConfidence[currentScenario.index] || 0.5;
+        const rewards = checkRewards(
+          currentScenario.index,
+          currentChapterIndex,
+          TOTAL_SCENARIOS,
+          isChapterComplete
+        );
+        
+        if (rewards.length > 0) {
+          setActiveRewards(prev => [...prev, ...rewards]);
+          // Show toast for rewards
+          rewards.forEach(reward => {
+            showToast(reward.message, 'success');
+          });
+        }
+        
+        // Check for shareable moments
+        const shouldShare = shouldShowSharePrompt(
+          currentScenario.index,
+          currentChapterIndex,
+          emotionalIntensity,
+          badges.map(b => b.id),
+          isChapterComplete,
+          false
+        );
+        
+        if (shouldShare && !showSharePrompt) {
+          const moment = generateShareableMoment(
+            isChapterComplete ? 'chapter_complete' : 'emotional_peak',
+            { chapterIndex: currentChapterIndex, scenarioIndex: currentScenario.index }
+          );
+          setShareableMoment(moment);
+          setShowSharePrompt(true);
+        }
+      }, { timeout: 200 });
+    }
+    
     // DEFERRED: Badge awarding (non-critical)
-    if (currentScenarioIndex === currentScenarios.length - 1 && currentChapterIndex < chapters.length - 1) {
+    if (isChapterComplete && currentChapterIndex < chapters.length - 1) {
       if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
         requestIdleCallback(() => {
           awardBadge(`chapter-${currentChapterIndex + 1}`);
@@ -305,6 +411,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
             currentChapterIndex,
             currentScenarioIndex,
             badges,
+            narrativeState,
             timestamp: Date.now(),
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
@@ -330,6 +437,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
             currentChapterIndex,
             currentScenarioIndex,
             badges,
+            narrativeState,
             timestamp: Date.now(),
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
@@ -519,6 +627,23 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       
       // Award completion badge
       awardBadge('complete');
+      
+      // Show completion reward
+      const completionReward = checkRewards(
+        TOTAL_SCENARIOS - 1,
+        currentChapterIndex,
+        TOTAL_SCENARIOS,
+        false
+      ).find(r => r.type === 'completion');
+      if (completionReward) {
+        setActiveRewards(prev => [...prev, completionReward]);
+        showToast(completionReward.message, 'success');
+      }
+      
+      // Show completion share prompt
+      const completionShare = generateShareableMoment('completion', {});
+      setShareableMoment(completionShare);
+      setShowSharePrompt(true);
       
       // Track completion (deferred)
       if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
@@ -798,6 +923,22 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
               </div>
             </div>
 
+            {/* Narrative Hook - Pre-scenario emotional setup */}
+            {(() => {
+              const narrativeHook = generateNarrativeHook(
+                currentScenario.index,
+                narrativeState,
+                previousChoice.current || undefined
+              );
+              return narrativeHook.preScenario ? (
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4 border border-white/20">
+                  <p className="text-sm italic opacity-90 drop-shadow-sm">
+                    {narrativeHook.preScenario}
+                  </p>
+                </div>
+              ) : null;
+            })()}
+
             <div className="bg-white/15 backdrop-blur-md rounded-xl p-6 mb-6 border border-white/20">
               <p className="text-xl leading-relaxed font-medium drop-shadow-md">{currentScenario.storyText}</p>
             </div>
@@ -934,6 +1075,31 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
           )}
         </div>
       </div>
+
+      {/* Reward Notifications */}
+      {activeRewards
+        .filter(reward => !dismissedRewards.has(reward.id))
+        .map(reward => (
+          <RewardNotification
+            key={reward.id}
+            reward={reward}
+            onDismiss={() => {
+              setDismissedRewards(prev => new Set([...prev, reward.id]));
+              setActiveRewards(prev => prev.filter(r => r.id !== reward.id));
+            }}
+          />
+        ))}
+
+      {/* Share Prompt */}
+      {showSharePrompt && shareableMoment && (
+        <SharePrompt
+          shareableMoment={shareableMoment}
+          onDismiss={() => {
+            setShowSharePrompt(false);
+            setShareableMoment(null);
+          }}
+        />
+      )}
 
       {/* Completion Debugger - Always show when not complete */}
       {!canComplete && (

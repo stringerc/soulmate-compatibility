@@ -228,6 +228,29 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     }
   }, [currentScenario, currentScenarioIndex, currentChapterIndex, confidenceScores]);
 
+  // Auto-scroll when confidence slider appears
+  useEffect(() => {
+    if (showConfidence && currentScenario) {
+      // Use requestAnimationFrame to ensure DOM update happens first
+      requestAnimationFrame(() => {
+        // Find the confidence slider element
+        const slider = document.querySelector(`[name="confidence-scenario-${currentScenario.index}"]`);
+        if (slider) {
+          // Scroll to slider with smooth behavior, ensuring Continue button is visible
+          slider.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Also scroll to navigation section to ensure Continue button is visible
+          setTimeout(() => {
+            const navSection = document.querySelector('[class*="flex justify-between items-center"]');
+            if (navSection) {
+              navSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          }, 100);
+        }
+      });
+    }
+  }, [showConfidence, currentScenario]);
+
   // Track drop-off on unmount
   useEffect(() => {
     return () => {
@@ -654,7 +677,14 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
         false
       ).find(r => r.type === 'completion');
       if (completionReward) {
-        setActiveRewards(prev => [...prev, completionReward]);
+        setActiveRewards(prev => {
+          // Prevent duplicate rewards
+          const existingIds = new Set(prev.map(r => r.id));
+          if (existingIds.has(completionReward.id)) {
+            return prev;
+          }
+          return [...prev, completionReward];
+        });
         showToast(completionReward.message, 'success');
       }
       

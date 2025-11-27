@@ -7,6 +7,7 @@ import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOf
 import { analyzeCompletion, validateCompletion, autoFillMissingResponses } from '@/lib/completionAnalyzer';
 import { performDeepAnalysis, generateFixScript } from '@/lib/deepCompletionAnalysis';
 import CompletionDebugger from './CompletionDebugger';
+import { useToast } from './Toast';
 
 interface StoryQuestProps {
   personNumber: number;
@@ -29,6 +30,9 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   const nameInputId = useId();
   const birthdateInputId = useId();
   const confidenceSliderId = useId();
+  
+  // Toast notifications
+  const { showToast, ToastComponent } = useToast();
   
   // Load saved progress from localStorage
   const loadSavedProgress = () => {
@@ -382,7 +386,16 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
   };
 
   const handleSubmit = (forceComplete: boolean = false) => {
-    trackButtonClick('Complete Your Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
+    // Defer heavy operations to prevent INP blocking
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        trackButtonClick('Complete Your Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
+      }, { timeout: 100 });
+    } else {
+      setTimeout(() => {
+        trackButtonClick('Complete Your Story', `chapter_${currentChapterIndex}_scenario_${currentScenarioIndex}`);
+      }, 0);
+    }
     
     // CRITICAL FIX: Save current scenario response if selected but not yet saved
     let finalResponses = [...responses];
@@ -407,93 +420,98 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       }
     }
     
-    // Use completion analyzer for robust validation
-    const analysis = analyzeCompletion(finalResponses);
-    const validation = validateCompletion(finalResponses);
-    
-    console.log('[handleSubmit] Completion Analysis:', {
-      totalScenarios: analysis.totalScenarios,
-      answeredCount: analysis.answeredCount,
-      unansweredCount: analysis.unansweredIndices.length,
-      canComplete: analysis.canComplete,
-      issues: analysis.issues,
-      forceComplete,
-    });
-    
-    // If force complete or auto-fill conditions met, proceed
-    if (!analysis.canComplete && !forceComplete) {
-      // Auto-fill if user is on last scenario and has answered most scenarios (28+)
-      if (isLastScenario && analysis.answeredCount >= TOTAL_SCENARIOS - 4) {
-        console.log(`[handleSubmit] Auto-filling ${analysis.unansweredIndices.length} missing scenarios (user answered ${analysis.answeredCount}/${analysis.totalScenarios})`);
+    // Defer heavy analysis operations
+    const processCompletion = () => {
+      // Use completion analyzer for robust validation
+      const analysis = analyzeCompletion(finalResponses);
+      const validation = validateCompletion(finalResponses);
+      
+      console.log('[handleSubmit] Completion Analysis:', {
+        totalScenarios: analysis.totalScenarios,
+        answeredCount: analysis.answeredCount,
+        unansweredCount: analysis.unansweredIndices.length,
+        canComplete: analysis.canComplete,
+        issues: analysis.issues,
+        forceComplete,
+      });
+      
+      // If force complete or auto-fill conditions met, proceed
+      if (!analysis.canComplete && !forceComplete) {
+        // Auto-fill if user is on last scenario and has answered most scenarios (28+)
+        if (isLastScenario && analysis.answeredCount >= TOTAL_SCENARIOS - 4) {
+          console.log(`[handleSubmit] Auto-filling ${analysis.unansweredIndices.length} missing scenarios (user answered ${analysis.answeredCount}/${analysis.totalScenarios})`);
+          const autoFilled = autoFillMissingResponses(finalResponses, finalConfidence);
+          finalResponses = autoFilled.responses;
+          finalConfidence = autoFilled.confidenceScores;
+          
+          // Update state
+          setResponses(finalResponses);
+          setConfidenceScores(finalConfidence);
+          
+          // Log auto-fill
+          console.log(`[handleSubmit] Auto-filled ${autoFilled.filledCount} scenarios with default values`);
+        } else {
+          // Show toast instead of alert for better UX
+          const missingCount = analysis.unansweredIndices.length;
+          showToast(
+            `Please answer all ${analysis.totalScenarios} scenarios. You've answered ${analysis.answeredCount} of ${analysis.totalScenarios}. ${missingCount} scenario${missingCount !== 1 ? 's' : ''} remaining.`,
+            'warning'
+          );
+          console.error('[handleSubmit] Validation failed:', validation.errors);
+          return;
+        }
+      }
+      
+      // If force complete, auto-fill any remaining missing scenarios
+      if (forceComplete) {
         const autoFilled = autoFillMissingResponses(finalResponses, finalConfidence);
         finalResponses = autoFilled.responses;
         finalConfidence = autoFilled.confidenceScores;
-        
-        // Update state
         setResponses(finalResponses);
         setConfidenceScores(finalConfidence);
-        
-        // Log auto-fill
-        console.log(`[handleSubmit] Auto-filled ${autoFilled.filledCount} scenarios with default values`);
-      } else {
-        // Show detailed error message with force complete option
-        const errorMessage = [
-          `Please answer all ${analysis.totalScenarios} scenarios before completing.`,
-          ``,
-          `You've answered ${analysis.answeredCount} of ${analysis.totalScenarios} scenarios.`,
-          `Missing ${analysis.unansweredIndices.length} scenario(s): ${analysis.unansweredIndices.slice(0, 5).join(', ')}${analysis.unansweredIndices.length > 5 ? '...' : ''}`,
-          ``,
-          `Tip: Use the "Force Complete" button (bottom right) to auto-fill missing scenarios.`,
-        ].join('\n');
-        
-        alert(errorMessage);
-        console.error('[handleSubmit] Validation failed:', validation.errors);
-        return;
       }
-    }
-    
-    // If force complete, auto-fill any remaining missing scenarios
-    if (forceComplete) {
-      const autoFilled = autoFillMissingResponses(finalResponses, finalConfidence);
-      finalResponses = autoFilled.responses;
-      finalConfidence = autoFilled.confidenceScores;
+      
+      // Update state with final values
       setResponses(finalResponses);
       setConfidenceScores(finalConfidence);
-    }
-    
-    // Update state with final values
-    setResponses(finalResponses);
-    setConfidenceScores(finalConfidence);
-    
-    // Birthdate is now optional - show warning but allow completion
-    if (!birthdate) {
-      const proceed = confirm(
-        'Birthdate is optional but needed for astrology/numerology features.\n\n' +
-        'Would you like to continue without birthdate?'
-      );
-      if (!proceed) {
-        return;
+      
+      // Birthdate is now optional - show toast instead of confirm
+      if (!birthdate) {
+        showToast('Birthdate is optional but enables astrology/numerology features. Continuing without it.', 'info');
       }
-    }
-    
-    // Award completion badge
-    awardBadge('complete');
-    
-    // Track completion
-    const finalAnsweredCount = finalResponses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
-    trackCompletion(personNumber, true, TOTAL_SCENARIOS, finalAnsweredCount);
-    
-    // Clear saved progress on completion
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(STORAGE_KEY);
+      
+      // Award completion badge
+      awardBadge('complete');
+      
+      // Track completion (deferred)
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+          const finalAnsweredCount = finalResponses.filter(r => r !== 0.5 && r !== undefined && r !== null).length;
+          trackCompletion(personNumber, true, TOTAL_SCENARIOS, finalAnsweredCount);
+        }, { timeout: 200 });
       }
-    } catch (e) {
-      console.warn('Failed to clear saved progress:', e);
-    }
+      
+      // Clear saved progress on completion (deferred)
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch (e) {
+            console.warn('Failed to clear saved progress:', e);
+          }
+        }, { timeout: 100 });
+      }
+      
+      // Use final arrays for completion
+      onComplete(finalResponses, birthdate || '', name || `Person ${personNumber}`, finalConfidence);
+    };
     
-    // Use final arrays for completion
-    onComplete(finalResponses, birthdate || '', name || `Person ${personNumber}`, finalConfidence);
+    // Defer processing to prevent blocking
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(processCompletion, { timeout: 50 });
+    } else {
+      setTimeout(processCompletion, 0);
+    }
   };
 
   const handleResume = () => {
@@ -573,6 +591,7 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 transition-colors duration-200">
+      {ToastComponent}
       <div className="max-w-4xl mx-auto">
         {/* Resume Prompt */}
         {showResumePrompt && (
@@ -673,6 +692,17 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onInvalid={(e) => {
+                  e.preventDefault();
+                  const target = e.target as HTMLInputElement;
+                  if (target.validity.valueMissing) {
+                    showToast('Name is optional, but please enter a valid name if provided.', 'info');
+                  } else if (target.validity.tooShort) {
+                    showToast('Name must be at least 2 characters long.', 'warning');
+                  } else if (target.validity.patternMismatch) {
+                    showToast('Please enter a valid name.', 'warning');
+                  }
+                }}
                 placeholder={`Person ${personNumber}`}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 aria-label={`Name for Person ${personNumber} (optional)`}
@@ -688,6 +718,20 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
                 type="date"
                 value={birthdate}
                 onChange={(e) => setBirthdate(e.target.value)}
+                onInvalid={(e) => {
+                  e.preventDefault();
+                  const target = e.target as HTMLInputElement;
+                  if (target.validity.valueMissing) {
+                    showToast('Birthdate is optional, but please enter a valid date if provided.', 'info');
+                  } else if (target.validity.badInput) {
+                    showToast('Please enter a valid date format (YYYY-MM-DD).', 'warning');
+                  } else if (target.validity.rangeOverflow) {
+                    showToast('Please enter a date in the past.', 'warning');
+                  } else if (target.validity.rangeUnderflow) {
+                    showToast('Please enter a valid birthdate.', 'warning');
+                  }
+                }}
+                max={new Date().toISOString().split('T')[0]} // Prevent future dates
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 placeholder="Select birthdate for enhanced features"
                 aria-label={`Birthdate for Person ${personNumber} (optional - enables astrology and numerology features)`}

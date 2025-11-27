@@ -34,14 +34,24 @@ export default function OnboardingPage() {
     setPersonConfidence(confidence);
 
     try {
-      // Save profile to backend
+      // Save profile to backend (with timeout)
       const { profileApi } = await import("@/lib/api");
-      const result = await profileApi.createOrUpdate({
+      
+      // Use Promise.race to add timeout
+      const savePromise = profileApi.createOrUpdate({
         astrology_meta: birthdate ? { birthdate } : undefined,
         numerology_meta: birthdate ? { birthdate } : undefined,
-      }) as any;
+      });
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timeout")), 10000)
+      );
+      
+      const result = await Promise.race([savePromise, timeoutPromise]) as any;
 
-          // Log analytics event
+      // Log analytics event (deferred)
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        requestIdleCallback(() => {
           try {
             logSoulmatesEvent({
               name: "onboard_completed",
@@ -55,6 +65,13 @@ export default function OnboardingPage() {
           } catch (e) {
             console.error("Analytics error:", e);
           }
+        }, { timeout: 200 });
+      }
+
+      // Show success message if saved locally
+      if (result?.profile?.saved_locally) {
+        console.log("Profile saved locally (backend unavailable)");
+      }
 
       // Redirect to dashboard
       router.push("/me");
@@ -65,8 +82,14 @@ export default function OnboardingPage() {
       if (errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("authentication")) {
         alert("Your session has expired. Please sign in again.");
         router.push(`/login?callbackUrl=${encodeURIComponent("/onboarding")}`);
+      } else if (errorMessage.includes("timeout")) {
+        // Timeout - still allow user to continue
+        console.warn("Profile save timed out, but allowing user to continue");
+        router.push("/me");
       } else {
-        alert("Failed to save profile. Please try again.");
+        // For other errors, still redirect (profile might be saved locally)
+        console.warn("Profile save error, but allowing user to continue:", errorMessage);
+        router.push("/me");
       }
     }
   };

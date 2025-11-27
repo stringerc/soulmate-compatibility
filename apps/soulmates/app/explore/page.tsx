@@ -587,7 +587,9 @@ export default function ExplorePage() {
         )}
 
         {/* Results Display */}
-        {result && selectedPartner && (
+        {result && selectedPartner && (() => {
+          const resultCompatibilityTier = getCompatibilityTier(result.snapshot.score_overall);
+          return (
           <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-8 space-y-8">
             {/* Header with Share */}
             <div className="flex items-center justify-between">
@@ -641,9 +643,9 @@ export default function ExplorePage() {
                   style={{ width: `${result.snapshot.score_overall * 100}%` }}
                 />
               </div>
-              {compatibilityTier && (
+              {resultCompatibilityTier && (
                 <p className="text-center mt-4 text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {compatibilityTier.label}
+                  {resultCompatibilityTier.label}
                 </p>
               )}
             </div>
@@ -745,7 +747,8 @@ export default function ExplorePage() {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

@@ -656,8 +656,6 @@ export default function ExplorePage() {
 
             {/* Archetype Profile Details - Enhanced */}
             {profile && (
-
-              return (
                 <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 shadow-xl overflow-hidden">
                   {/* Profile Header */}
                   <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 text-white">

@@ -26,7 +26,7 @@ export default function DashboardPage() {
         ]);
         
         // Extract profile from response (could be { profile: {...} } or just {...})
-        const profileData = profileResponse?.profile || profileResponse;
+        const profileData = (profileResponse as any)?.profile || profileResponse;
         setProfile(profileData);
         setSubscription(subscriptionData);
         

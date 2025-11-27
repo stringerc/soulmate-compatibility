@@ -228,51 +228,6 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
     }
   }, [currentScenario, currentScenarioIndex, currentChapterIndex, confidenceScores]);
 
-  // Auto-scroll when confidence slider appears (only when it becomes true, not false)
-  const prevShowConfidence = useRef(false);
-  useEffect(() => {
-    // Only scroll when showConfidence transitions from false to true
-    if (showConfidence && !prevShowConfidence.current && currentScenario) {
-      // Use requestAnimationFrame to ensure DOM update happens first
-      requestAnimationFrame(() => {
-        // Find the confidence slider element
-        const slider = document.querySelector(`[name="confidence-scenario-${currentScenario.index}"]`);
-        const navSection = document.querySelector('[class*="flex justify-between items-center"]');
-        
-        if (slider && navSection) {
-          const sliderRect = slider.getBoundingClientRect();
-          const navRect = navSection.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          
-          // Check if both elements are already visible
-          const sliderVisible = sliderRect.top >= 0 && sliderRect.bottom <= viewportHeight;
-          const navVisible = navRect.top >= 0 && navRect.bottom <= viewportHeight;
-          
-          // Only scroll if either element is not fully visible
-          if (!sliderVisible || !navVisible) {
-            // Calculate the ideal scroll position to show both elements
-            const sliderBottom = sliderRect.bottom + window.scrollY;
-            const navTop = navRect.top + window.scrollY;
-            
-            // Scroll to show both elements with some padding
-            const targetScroll = Math.min(sliderBottom + 20, navTop - 20);
-            const currentScroll = window.scrollY;
-            
-            // Only scroll if we need to move significantly (more than 50px)
-            if (Math.abs(targetScroll - currentScroll) > 50) {
-              window.scrollTo({ 
-                top: targetScroll, 
-                behavior: 'smooth' 
-              });
-            }
-          }
-        }
-      });
-    }
-    // Update ref for next render
-    prevShowConfidence.current = showConfidence;
-  }, [showConfidence, currentScenario]);
-
   // Track drop-off on unmount
   useEffect(() => {
     return () => {

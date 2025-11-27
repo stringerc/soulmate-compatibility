@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSoulmatesFeature } from "@/hooks/useSoulmatesFeature";
-import { compatibilityApi } from "@/lib/api";
+import { compatibilityApi, profileApi } from "@/lib/api";
 import { logSoulmatesEvent } from "@/lib/analytics";
-import { Sparkles, TrendingUp, Heart, Brain, Users, Target } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { ARCHETYPAL_PROFILES } from "@/lib/archetypalProfiles";
+import { calculateCompatibility, getCompatibilityTier } from "@/lib/compatibilityEngine";
 
 interface CompatibilityResult {
   success: boolean;
@@ -22,95 +24,7 @@ interface CompatibilityResult {
   };
 }
 
-// Archetypal partners based on attachment theory and personality types
-const ARCHETYPAL_PARTNERS = [
-  {
-    id: "secure_attached",
-    name: "Secure & Attached",
-    icon: Heart,
-    description: "Emotionally available, balanced, values intimacy and independence equally",
-    traits: Array(32).fill(0.5).map((_, i) => {
-      // Secure attachment: balanced across dimensions
-      if (i < 5) return 0.7; // High security
-      if (i >= 5 && i < 10) return 0.6; // Moderate anxiety
-      if (i >= 10 && i < 15) return 0.5; // Balanced
-      if (i >= 15 && i < 20) return 0.6; // Good communication
-      if (i >= 20 && i < 25) return 0.7; // High values alignment
-      return 0.6; // Social and life structure
-    }),
-  },
-  {
-    id: "anxious_preoccupied",
-    name: "Anxious & Preoccupied",
-    icon: Users,
-    description: "Seeks closeness, worries about abandonment, values emotional connection",
-    traits: Array(32).fill(0.5).map((_, i) => {
-      // Anxious attachment: high need for closeness
-      if (i < 5) return 0.3; // Low security, high anxiety
-      if (i >= 5 && i < 10) return 0.8; // High anxiety
-      if (i >= 10 && i < 15) return 0.4; // Lower autonomy
-      if (i >= 15 && i < 20) return 0.7; // Good communication (seeks reassurance)
-      if (i >= 20 && i < 25) return 0.6; // Moderate values
-      return 0.5;
-    }),
-  },
-  {
-    id: "avoidant_dismissive",
-    name: "Avoidant & Dismissive",
-    icon: Brain,
-    description: "Values independence, emotional distance, self-reliance",
-    traits: Array(32).fill(0.5).map((_, i) => {
-      // Avoidant attachment: high independence
-      if (i < 5) return 0.6; // Moderate security
-      if (i >= 5 && i < 10) return 0.2; // Low anxiety
-      if (i >= 10 && i < 15) return 0.8; // High autonomy
-      if (i >= 15 && i < 20) return 0.4; // Lower communication
-      if (i >= 20 && i < 25) return 0.5; // Moderate values
-      return 0.6;
-    }),
-  },
-  {
-    id: "disorganized_fearful",
-    name: "Disorganized & Fearful",
-    icon: TrendingUp,
-    description: "Mixed attachment patterns, seeks but fears intimacy",
-    traits: Array(32).fill(0.5).map((_, i) => {
-      // Disorganized: mixed patterns
-      if (i < 5) return 0.4; // Low security
-      if (i >= 5 && i < 10) return 0.7; // High anxiety
-      if (i >= 10 && i < 15) return 0.5; // Mixed autonomy
-      if (i >= 15 && i < 20) return 0.5; // Variable communication
-      if (i >= 20 && i < 25) return 0.5; // Mixed values
-      return 0.5;
-    }),
-  },
-  {
-    id: "explorer",
-    name: "The Explorer",
-    icon: Sparkles,
-    description: "Adventurous, independent, values freedom and new experiences",
-    traits: Array(32).fill(0.5).map((_, i) => {
-      // High novelty, autonomy, low stability
-      if (i < 8) return 0.8; // High novelty seeking
-      if (i >= 8 && i < 16) return 0.3; // Low stability
-      if (i >= 16 && i < 24) return 0.7; // High autonomy
-      return 0.6;
-    }),
-  },
-  {
-    id: "builder",
-    name: "The Builder",
-    icon: Target,
-    description: "Stable, goal-oriented, values security and long-term planning",
-    traits: Array(32).fill(0.5).map((_, i) => {
-      // High stability, planning, low novelty
-      if (i < 8) return 0.3; // Low novelty
-      if (i >= 8 && i < 16) return 0.8; // High stability
-      if (i >= 16 && i < 24) return 0.5; // Moderate autonomy
-      return 0.7; // High structure
-    }),
-  },
-];
+// Profiles are now imported from archetypalProfiles.ts
 
 export default function ExplorePage() {
   const canExplore = useSoulmatesFeature("comp_explorer");
@@ -119,6 +33,62 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userTraits, setUserTraits] = useState<number[] | null>(null);
+  const [clientScores, setClientScores] = useState<Record<string, number>>({});
+
+  // Load user profile traits
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const profileResponse = await profileApi.get();
+        const profile = (profileResponse as any)?.profile || profileResponse;
+        if (profile?.traits && Array.isArray(profile.traits) && profile.traits.length === 32) {
+          setUserTraits(profile.traits);
+          
+          // Calculate client-side compatibility scores for all profiles
+          const scores: Record<string, number> = {};
+          ARCHETYPAL_PROFILES.forEach(archetypalProfile => {
+            try {
+              const compatibility = calculateCompatibility(profile.traits, archetypalProfile.traits);
+              scores[archetypalProfile.id] = compatibility.overall;
+            } catch (e) {
+              console.error(`Error calculating compatibility for ${archetypalProfile.id}:`, e);
+            }
+          });
+          setClientScores(scores);
+        } else {
+          // Fallback: try localStorage
+          if (typeof window !== 'undefined') {
+            const localProfile = localStorage.getItem('soulmates_profile');
+            if (localProfile) {
+              const parsed = JSON.parse(localProfile);
+              if (parsed.traits && Array.isArray(parsed.traits) && parsed.traits.length === 32) {
+                setUserTraits(parsed.traits);
+                
+                // Calculate client-side compatibility scores
+                const scores: Record<string, number> = {};
+                ARCHETYPAL_PROFILES.forEach(profile => {
+                  try {
+                    const compatibility = calculateCompatibility(parsed.traits, profile.traits);
+                    scores[profile.id] = compatibility.overall;
+                  } catch (e) {
+                    console.error(`Error calculating compatibility for ${profile.id}:`, e);
+                  }
+                });
+                setClientScores(scores);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error loading user profile:", e);
+      }
+    };
+    
+    if (canExplore) {
+      loadUserProfile();
+    }
+  }, [canExplore]);
 
   if (!canExplore) {
     return (
@@ -146,35 +116,86 @@ export default function ExplorePage() {
     setSelectedPartner(partnerId);
 
     try {
-      const partner = ARCHETYPAL_PARTNERS.find((p) => p.id === partnerId);
+      const partner = ARCHETYPAL_PROFILES.find((p) => p.id === partnerId);
       if (!partner) {
         throw new Error("Partner not found");
       }
 
-      const data = await compatibilityApi.explore({
-        hypothetical_profile: {
-          traits: partner.traits,
-          name: partner.name,
-        },
-        allow_astrology: true,
-        allow_numerology: true,
-      }) as CompatibilityResult;
+      // Calculate client-side compatibility first (instant feedback)
+      let clientCompatibility = null;
+      if (userTraits && userTraits.length === 32) {
+        try {
+          clientCompatibility = calculateCompatibility(userTraits, partner.traits);
+          // Show client-side result immediately
+          setResult({
+            success: true,
+            snapshot: {
+              id: `client-${partnerId}`,
+              score_overall: clientCompatibility.overall,
+              score_axes: {
+                similarity: clientCompatibility.similarity,
+                complementarity: clientCompatibility.complementarity,
+                attachment: clientCompatibility.attachmentMatch,
+                conflict: clientCompatibility.conflictMatch,
+                social: clientCompatibility.socialMatch,
+                values: clientCompatibility.valuesMatch,
+              },
+              astro_used: false,
+              num_used: false,
+              soulmate_flag: clientCompatibility.overall >= 0.85,
+              explanation_summary: [
+                ...clientCompatibility.strengths.map(s => `✓ ${s}`),
+                ...clientCompatibility.challenges.map(c => `⚠ ${c}`),
+                ...clientCompatibility.insights.map(i => `💡 ${i}`),
+              ].join('\n\n'),
+            },
+          });
+        } catch (e) {
+          console.error("Error calculating client-side compatibility:", e);
+        }
+      }
 
-      setResult(data);
-      
-      // Log analytics event
+      // Try backend API for enhanced results (astrology, numerology)
       try {
-        logSoulmatesEvent({
-          name: "comp_explorer_run",
-          payload: {
-            partner_id: partnerId,
-            partner_name: partner.name,
-            score_overall: data.snapshot?.score_overall || 0,
-            soulmate_flag: data.snapshot?.soulmate_flag || false,
+        const data = await compatibilityApi.explore({
+          hypothetical_profile: {
+            traits: partner.traits,
+            name: partner.name,
           },
-        });
-      } catch (e) {
-        console.error("Analytics error:", e);
+          allow_astrology: true,
+          allow_numerology: true,
+        }) as CompatibilityResult;
+
+        // Merge backend results with client-side insights
+        if (clientCompatibility) {
+          data.snapshot.explanation_summary = [
+            ...clientCompatibility.strengths.map(s => `✓ ${s}`),
+            ...clientCompatibility.challenges.map(c => `⚠ ${c}`),
+            ...clientCompatibility.insights.map(i => `💡 ${i}`),
+            data.snapshot.explanation_summary ? `\n\n${data.snapshot.explanation_summary}` : '',
+          ].join('\n\n');
+        }
+
+        setResult(data);
+      
+        // Log analytics event
+        try {
+          logSoulmatesEvent({
+            name: "comp_explorer_run",
+            payload: {
+              partner_id: partnerId,
+              partner_name: partner.name,
+              score_overall: data.snapshot?.score_overall || 0,
+              soulmate_flag: data.snapshot?.soulmate_flag || false,
+            },
+          });
+        } catch (e) {
+          console.error("Analytics error:", e);
+        }
+      } catch (apiError) {
+        // Backend API failed, but we already have client-side results
+        console.warn("Backend API unavailable, using client-side results only:", apiError);
+        // Client-side result is already set above, so we can continue
       }
     } catch (err: any) {
       // Check if it's a 503 (backend unavailable) error
@@ -218,22 +239,33 @@ export default function ExplorePage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {ARCHETYPAL_PARTNERS.map((partner) => {
+          {ARCHETYPAL_PROFILES.map((partner) => {
             const Icon = partner.icon;
             const isSelected = selectedPartner === partner.id;
             const isCalculating = loading && isSelected;
+            const compatibilityScore = clientScores[partner.id];
+            const tier = compatibilityScore ? getCompatibilityTier(compatibilityScore) : null;
             
             return (
               <button
                 key={partner.id}
                 onClick={() => !loading && handleExplore(partner.id)}
                 disabled={loading}
-                className={`p-6 border-2 rounded-xl cursor-pointer transition-all text-left ${
+                className={`p-6 border-2 rounded-xl cursor-pointer transition-all text-left relative ${
                   isSelected
                     ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20 shadow-lg scale-105"
                     : "border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md"
                 } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
+                {/* Compatibility Score Badge */}
+                {compatibilityScore !== undefined && (
+                  <div className="absolute top-2 right-2">
+                    <div className={`px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${tier?.color || 'from-gray-400 to-gray-500'} text-white`}>
+                      {Math.round(compatibilityScore * 100)}%
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-3 mb-3">
                   <div className={`p-2 rounded-lg ${
                     isSelected 
@@ -246,13 +278,30 @@ export default function ExplorePage() {
                         : "text-gray-600 dark:text-gray-400"
                     }`} />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {partner.name}
-                  </h3>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {partner.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {partner.archetype} • {partner.attachmentStyle}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                   {partner.description}
                 </p>
+                
+                {/* Love Languages */}
+                {partner.loveLanguages.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {partner.loveLanguages.slice(0, 2).map((lang) => (
+                      <span key={lang} className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded">
+                        {lang}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {isCalculating && (
                   <div className="flex items-center gap-2 text-pink-600 dark:text-pink-400">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-pink-600 border-t-transparent"></div>

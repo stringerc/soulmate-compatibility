@@ -96,18 +96,21 @@ export default function OnboardingPage() {
           };
           
           localStorage.setItem('soulmates_profile', JSON.stringify(profileToStore));
-          console.log("✅ Profile stored in localStorage for dashboard", {
-            primary_archetype: profileToStore.primary_archetype,
-            attachment_style: profileToStore.attachment_style,
-            love_languages: profileToStore.love_languages,
-          });
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log("✅ Profile stored in localStorage for dashboard", {
+              primary_archetype: profileToStore.primary_archetype,
+              attachment_style: profileToStore.attachment_style,
+              love_languages: profileToStore.love_languages,
+            });
+          }
         } catch (e) {
           console.error("Failed to store profile in localStorage:", e);
         }
       }
       
-      // Show success message if saved locally
-      if (result?.profile?.saved_locally) {
+      // Show success message if saved locally (only log in development)
+      if (result?.profile?.saved_locally && process.env.NODE_ENV === 'development') {
         console.log("Profile saved locally (backend unavailable)");
       }
 

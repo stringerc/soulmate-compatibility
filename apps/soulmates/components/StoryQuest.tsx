@@ -423,9 +423,11 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
           
-          // Log completion analysis for debugging
-          const analysis = analyzeCompletion(newResponses);
-          console.log(`[handleNext] Scenario ${currentScenario.index} saved. Progress: ${analysis.answeredCount}/${analysis.totalScenarios}`);
+          // Log completion analysis for debugging (only in development)
+          if (process.env.NODE_ENV === 'development') {
+            const analysis = analyzeCompletion(newResponses);
+            console.log(`[handleNext] Scenario ${currentScenario.index} saved. Progress: ${analysis.answeredCount}/${analysis.totalScenarios}`);
+          }
         } catch (e) {
           console.error('[handleNext] Failed to save progress:', e);
         }
@@ -531,10 +533,12 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       console.error('Failed to save after force complete:', e);
     }
     
-    // Immediately proceed with completion
-    setTimeout(() => {
-      handleSubmit(true); // Pass force flag
-    }, 200);
+    // Immediately proceed with completion (use requestIdleCallback if available)
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(() => handleSubmit(true), { timeout: 100 });
+    } else {
+      setTimeout(() => handleSubmit(true), 50);
+    }
   };
 
   const handleSubmit = (forceComplete: boolean = false) => {
@@ -578,20 +582,25 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       const analysis = analyzeCompletion(finalResponses);
       const validation = validateCompletion(finalResponses);
       
-      console.log('[handleSubmit] Completion Analysis:', {
-        totalScenarios: analysis.totalScenarios,
-        answeredCount: analysis.answeredCount,
-        unansweredCount: analysis.unansweredIndices.length,
-        canComplete: analysis.canComplete,
-        issues: analysis.issues,
-        forceComplete,
-      });
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[handleSubmit] Completion Analysis:', {
+          totalScenarios: analysis.totalScenarios,
+          answeredCount: analysis.answeredCount,
+          unansweredCount: analysis.unansweredIndices.length,
+          canComplete: analysis.canComplete,
+          issues: analysis.issues,
+          forceComplete,
+        });
+      }
       
       // If force complete or auto-fill conditions met, proceed
       if (!analysis.canComplete && !forceComplete) {
         // Auto-fill if user is on last scenario and has answered most scenarios (28+)
         if (isLastScenario && analysis.answeredCount >= TOTAL_SCENARIOS - 4) {
-          console.log(`[handleSubmit] Auto-filling ${analysis.unansweredIndices.length} missing scenarios (user answered ${analysis.answeredCount}/${analysis.totalScenarios})`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[handleSubmit] Auto-filling ${analysis.unansweredIndices.length} missing scenarios (user answered ${analysis.answeredCount}/${analysis.totalScenarios})`);
+          }
           const autoFilled = autoFillMissingResponses(finalResponses, finalConfidence);
           finalResponses = autoFilled.responses;
           finalConfidence = autoFilled.confidenceScores;
@@ -600,8 +609,10 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
           setResponses(finalResponses);
           setConfidenceScores(finalConfidence);
           
-          // Log auto-fill
-          console.log(`[handleSubmit] Auto-filled ${autoFilled.filledCount} scenarios with default values`);
+          // Log auto-fill (only in development)
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[handleSubmit] Auto-filled ${autoFilled.filledCount} scenarios with default values`);
+          }
         } else {
           // Show toast instead of alert for better UX
           const missingCount = analysis.unansweredIndices.length;
@@ -682,11 +693,11 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       onComplete(finalResponses, birthdate || '', name || `Person ${personNumber}`, finalConfidence);
     };
     
-    // Defer processing to prevent blocking
+    // Defer processing to prevent blocking (batch with longer timeout)
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      requestIdleCallback(processCompletion, { timeout: 50 });
+      requestIdleCallback(processCompletion, { timeout: 500 });
     } else {
-      setTimeout(processCompletion, 0);
+      setTimeout(processCompletion, 10);
     }
   };
 

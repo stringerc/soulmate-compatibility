@@ -603,18 +603,18 @@ export default function ExplorePage() {
           const resultCompatibilityTier = getCompatibilityTier(result.snapshot.score_overall);
           const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
           
+          // Trait dimension labels for visualization
+          const traitLabels = [
+            'Attachment Security', 'Conflict Style', 'Cognitive Processing',
+            'Value Alignment', 'Social Orientation', 'Intimacy Depth', 'Life Structure'
+          ];
+
           const toggleSection = (section: string) => {
             setExpandedSections(prev => ({
               ...prev,
               [section]: !prev[section]
             }));
           };
-
-          // Trait dimension labels for visualization
-          const traitLabels = [
-            'Attachment Security', 'Conflict Style', 'Cognitive Processing',
-            'Value Alignment', 'Social Orientation', 'Intimacy Depth', 'Life Structure'
-          ];
 
           return (
           <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-8 space-y-8">

@@ -237,19 +237,35 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       requestAnimationFrame(() => {
         // Find the confidence slider element
         const slider = document.querySelector(`[name="confidence-scenario-${currentScenario.index}"]`);
-        if (slider) {
-          // Scroll to ensure both slider and Continue button are visible
-          // Use 'nearest' to avoid over-scrolling
-          slider.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const navSection = document.querySelector('[class*="flex justify-between items-center"]');
+        
+        if (slider && navSection) {
+          const sliderRect = slider.getBoundingClientRect();
+          const navRect = navSection.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
           
-          // After a short delay, ensure navigation section (with Continue button) is visible
-          setTimeout(() => {
-            const navSection = document.querySelector('[class*="flex justify-between items-center"]');
-            if (navSection) {
-              // Use 'nearest' to avoid scrolling away from the slider
-              navSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          // Check if both elements are already visible
+          const sliderVisible = sliderRect.top >= 0 && sliderRect.bottom <= viewportHeight;
+          const navVisible = navRect.top >= 0 && navRect.bottom <= viewportHeight;
+          
+          // Only scroll if either element is not fully visible
+          if (!sliderVisible || !navVisible) {
+            // Calculate the ideal scroll position to show both elements
+            const sliderBottom = sliderRect.bottom + window.scrollY;
+            const navTop = navRect.top + window.scrollY;
+            
+            // Scroll to show both elements with some padding
+            const targetScroll = Math.min(sliderBottom + 20, navTop - 20);
+            const currentScroll = window.scrollY;
+            
+            // Only scroll if we need to move significantly (more than 50px)
+            if (Math.abs(targetScroll - currentScroll) > 50) {
+              window.scrollTo({ 
+                top: targetScroll, 
+                behavior: 'smooth' 
+              });
             }
-          }, 300);
+          }
         }
       });
     }

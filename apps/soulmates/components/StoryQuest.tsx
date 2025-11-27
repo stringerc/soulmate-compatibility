@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useId, useTransition, flushSync } from 'react';
+import { useState, useEffect, useRef, useMemo, useId, useTransition } from 'react';
 import { STORY_SCENARIOS, CHAPTER_THEMES, getCategoryChapters, getScenariosForChapter } from '@/lib/storyScenarios';
 import { Sparkles, Heart, Trophy, Star, CheckCircle2 } from 'lucide-react';
 import { trackScenarioStart, trackScenarioComplete, trackCompletion, trackDropOff, trackButtonClick } from '@/lib/analytics';
@@ -262,22 +262,21 @@ export default function StoryQuest({ personNumber, onComplete }: StoryQuestProps
       : 0.5;
     
     // CRITICAL: Immediate UI updates (navigation, visual feedback)
-    flushSync(() => {
-      // Navigate immediately (non-blocking)
-      if (currentScenarioIndex < currentScenarios.length - 1) {
-        setCurrentScenarioIndex(currentScenarioIndex + 1);
-      } else {
-        // Move to next chapter
-        if (currentChapterIndex < chapters.length - 1) {
-          setCurrentChapterIndex(currentChapterIndex + 1);
-          setCurrentScenarioIndex(0);
-        }
+    // Use direct state updates for immediate feedback (React will batch these)
+    // Navigate immediately (non-blocking)
+    if (currentScenarioIndex < currentScenarios.length - 1) {
+      setCurrentScenarioIndex(currentScenarioIndex + 1);
+    } else {
+      // Move to next chapter
+      if (currentChapterIndex < chapters.length - 1) {
+        setCurrentChapterIndex(currentChapterIndex + 1);
+        setCurrentScenarioIndex(0);
       }
-      
-      // Reset for next scenario (immediate visual feedback)
-      setSelectedChoice(null);
-      setShowConfidence(false);
-    });
+    }
+    
+    // Reset for next scenario (immediate visual feedback)
+    setSelectedChoice(null);
+    setShowConfidence(false);
     
     // NON-URGENT: State updates (deferred)
     startTransition(() => {

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useSoulmatesFeature } from "@/hooks/useSoulmatesFeature";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { profileApi } from "@/lib/api";
+import { calculatePrimaryArchetype, calculateAttachmentStyle, calculateLoveLanguages } from "@/lib/profileCalculations";
 
 interface ResonanceData {
   window_start: string;
@@ -21,11 +23,33 @@ export default function SoloLabPage() {
   const [resonance, setResonance] = useState<ResonanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [windowDays, setWindowDays] = useState(30);
+  const [profile, setProfile] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadResonance = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
+        // Load user profile for trait analysis
+        try {
+          const profileResponse = await profileApi.get();
+          const profileData = (profileResponse as any)?.profile || profileResponse;
+          if (profileData?.traits && Array.isArray(profileData.traits) && profileData.traits.length === 32) {
+            setProfile(profileData);
+          } else if (typeof window !== 'undefined') {
+            // Fallback to localStorage
+            const localProfile = localStorage.getItem('soulmates_profile');
+            if (localProfile) {
+              const parsed = JSON.parse(localProfile);
+              if (parsed.traits && Array.isArray(parsed.traits) && parsed.traits.length === 32) {
+                setProfile(parsed);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error loading profile:", e);
+        }
+
         // Call actual resonance API
         const { resonanceApi } = await import("@/lib/api");
         try {
@@ -55,14 +79,14 @@ export default function SoloLabPage() {
           }
         }
       } catch (error) {
-        console.error("Error loading resonance:", error);
+        console.error("Error loading data:", error);
       } finally {
         setLoading(false);
       }
     };
 
     if (canUseLab) {
-      loadResonance();
+      loadData();
     }
   }, [canUseLab, windowDays]);
 
@@ -96,7 +120,16 @@ export default function SoloLabPage() {
     );
   }
 
-  const [error, setError] = useState<string | null>(null);
+  // Calculate trait dimensions for visualization
+  const traitDimensions = profile?.traits ? [
+    { name: 'Attachment & Regulation', value: profile.traits.slice(0, 5).reduce((a: number, b: number) => a + b, 0) / 5 },
+    { name: 'Conflict & Communication', value: profile.traits.slice(5, 10).reduce((a: number, b: number) => a + b, 0) / 5 },
+    { name: 'Cognitive & Decision', value: profile.traits.slice(10, 15).reduce((a: number, b: number) => a + b, 0) / 5 },
+    { name: 'Value Architecture', value: profile.traits.slice(15, 21).reduce((a: number, b: number) => a + b, 0) / 6 },
+    { name: 'Social & Interpersonal', value: profile.traits.slice(21, 26).reduce((a: number, b: number) => a + b, 0) / 5 },
+    { name: 'Sexual System', value: profile.traits.slice(26, 29).reduce((a: number, b: number) => a + b, 0) / 3 },
+    { name: 'Life Structure', value: profile.traits.slice(29, 32).reduce((a: number, b: number) => a + b, 0) / 3 },
+  ] : [];
 
   return (
     <div className="min-h-screen p-8">
@@ -185,6 +218,64 @@ export default function SoloLabPage() {
                 </div>
               </div>
             </div>
+
+            {/* Trait Dimensions Visualization */}
+            {profile && traitDimensions.length > 0 && (
+              <div className="p-8 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-xl">
+                <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Trait Dimensions</h2>
+                <div className="space-y-4">
+                  {traitDimensions.map((dim, idx) => (
+                    <div key={idx}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {dim.name}
+                        </span>
+                        <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
+                          {(dim.value * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-700"
+                          style={{ width: `${dim.value * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Profile Insights */}
+            {profile && (
+              <div className="p-8 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-xl">
+                <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Profile Insights</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Primary Archetype</h3>
+                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      {profile.primary_archetype || calculatePrimaryArchetype(profile.traits)}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Attachment Style</h3>
+                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                      {profile.attachment_style || calculateAttachmentStyle(profile.traits)}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Love Languages</h3>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(profile.love_languages || calculateLoveLanguages(profile.traits)).slice(0, 3).map((lang: string) => (
+                        <span key={lang} className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded">
+                          {lang}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="p-6 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-lg">
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Time Window</h2>

@@ -449,7 +449,7 @@ export default function ExplorePage() {
             const isSelected = selectedPartner === partner.id;
             const isCalculating = loading && isSelected;
             const compatibilityScore = clientScores[partner.id];
-            const tier = compatibilityScore ? getCompatibilityTier(compatibilityScore) : null;
+            const compatibilityTier = compatibilityScore ? getCompatibilityTier(compatibilityScore) : null;
             const isRecommended = recommendedArchetypes.includes(partner.id);
             const explorationCount = getArchetypeExplorationCount(partner.id);
             const hasExplored = explorationCount > 0;
@@ -478,7 +478,7 @@ export default function ExplorePage() {
                 {/* Compatibility Score Badge */}
                 {compatibilityScore !== undefined && (
                   <div className="absolute top-2 right-2 z-10">
-                    <div className={`px-3 py-1.5 rounded-full text-sm font-bold text-white shadow-lg bg-gradient-to-r ${tier?.color || 'from-gray-400 to-gray-500'}`}>
+                    <div className={`px-3 py-1.5 rounded-full text-sm font-bold text-white shadow-lg bg-gradient-to-r ${compatibilityTier?.color || 'from-gray-400 to-gray-500'}`}>
                       {Math.round(compatibilityScore * 100)}%
                     </div>
                   </div>
@@ -641,9 +641,9 @@ export default function ExplorePage() {
                   style={{ width: `${result.snapshot.score_overall * 100}%` }}
                 />
               </div>
-              {tier && (
+              {compatibilityTier && (
                 <p className="text-center mt-4 text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {tier.label}
+                  {compatibilityTier.label}
                 </p>
               )}
             </div>

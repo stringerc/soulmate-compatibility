@@ -66,8 +66,10 @@ export default function ExplorePage() {
   const [explorationStats, setExplorationStats] = useState({
     totalExplorations: 0,
     uniqueArchetypes: 0,
+    explorationHistory: [] as Array<{ archetypeId: string; timestamp: number }>,
+    badges: [] as ExplorationBadge[],
     currentStreak: 0,
-    lastExplorationDate: null as string | null
+    lastExplorationDate: null as number | null
   });
   const [newBadges, setNewBadges] = useState<ExplorationBadge[]>([]);
   const [showBadgeNotification, setShowBadgeNotification] = useState(false);

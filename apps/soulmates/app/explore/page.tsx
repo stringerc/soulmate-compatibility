@@ -87,7 +87,7 @@ export default function ExplorePage() {
   const resultData = useMemo(() => {
     if (!result || !selectedPartner || !isClient) return null;
     const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
-    if (!profile) return null;
+    if (!profile || !result.snapshot) return null;
     const resultCompatibilityTier = getCompatibilityTier(result.snapshot.score_overall);
     return { profile, resultCompatibilityTier, snapshot: result.snapshot };
   }, [result, selectedPartner, isClient]);
@@ -345,7 +345,7 @@ export default function ExplorePage() {
   };
 
   const handleShare = async (platform: 'twitter' | 'facebook' | 'instagram' | 'whatsapp' | 'copy_link') => {
-    if (!result) return;
+    if (!result || !result.snapshot) return;
     
     const score = Math.round(result.snapshot.score_overall * 100);
     const partner = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);

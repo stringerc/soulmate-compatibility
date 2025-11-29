@@ -63,7 +63,12 @@ export default function ExplorePage() {
   const [userTraits, setUserTraits] = useState<number[] | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [clientScores, setClientScores] = useState<Record<string, number>>({});
-  const [explorationStats, setExplorationStats] = useState(getExplorationStats());
+  const [explorationStats, setExplorationStats] = useState({
+    totalExplorations: 0,
+    uniqueArchetypes: 0,
+    currentStreak: 0,
+    lastExplorationDate: null as string | null
+  });
   const [newBadges, setNewBadges] = useState<ExplorationBadge[]>([]);
   const [showBadgeNotification, setShowBadgeNotification] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -73,14 +78,16 @@ export default function ExplorePage() {
     idealMatches: false,
     traits: false
   });
+  const [isClient, setIsClient] = useState(false);
 
   // Memoize calculations to avoid hydration issues
   const resultData = useMemo(() => {
-    if (!result || !selectedPartner) return null;
+    if (!result || !selectedPartner || !isClient) return null;
     const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
+    if (!profile) return null;
     const resultCompatibilityTier = getCompatibilityTier(result.snapshot.score_overall);
     return { profile, resultCompatibilityTier };
-  }, [result, selectedPartner]);
+  }, [result, selectedPartner, isClient]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -94,6 +101,12 @@ export default function ExplorePage() {
     'Attachment Security', 'Conflict Style', 'Cognitive Processing',
     'Value Alignment', 'Social Orientation', 'Intimacy Depth', 'Life Structure'
   ];
+
+  // Initialize client-side state
+  useEffect(() => {
+    setIsClient(true);
+    setExplorationStats(getExplorationStats());
+  }, []);
 
   // Load user profile traits
   useEffect(() => {

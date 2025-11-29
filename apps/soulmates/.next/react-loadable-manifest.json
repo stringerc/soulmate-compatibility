@@ -1,1 +1,14 @@
-{}
+{
+  "components/AnalyticsProvider.tsx -> mixpanel-browser": {
+    "id": "components/AnalyticsProvider.tsx -> mixpanel-browser",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_mixpanel-browser_dist_mixpanel_module_js.js"
+    ]
+  },
+  "components/AnalyticsProvider.tsx -> posthog-js": {
+    "id": "components/AnalyticsProvider.tsx -> posthog-js",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_posthog-js_dist_module_js.js"
+    ]
+  }
+}

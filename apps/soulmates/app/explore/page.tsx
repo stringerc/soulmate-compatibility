@@ -89,7 +89,7 @@ export default function ExplorePage() {
     const profile = ARCHETYPAL_PROFILES.find(p => p.id === selectedPartner);
     if (!profile) return null;
     const resultCompatibilityTier = getCompatibilityTier(result.snapshot.score_overall);
-    return { profile, resultCompatibilityTier };
+    return { profile, resultCompatibilityTier, snapshot: result.snapshot };
   }, [result, selectedPartner, isClient]);
 
   const toggleSection = (section: string) => {
@@ -649,7 +649,7 @@ export default function ExplorePage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                {result.snapshot.soulmate_flag && (
+                {resultData.snapshot.soulmate_flag && (
                   <span className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-pink-500 text-white rounded-full text-sm font-semibold flex items-center gap-2">
                     <Sparkles className="w-4 h-4" />
                     Soulmate Tier!
@@ -966,13 +966,13 @@ export default function ExplorePage() {
                   Overall Compatibility
                 </span>
                 <span className="text-6xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  {(result.snapshot.score_overall * 100).toFixed(0)}%
+                  {(resultData.snapshot.score_overall * 100).toFixed(0)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-8 overflow-hidden shadow-inner">
                 <div
                   className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full transition-all duration-1000 ease-out shadow-lg"
-                  style={{ width: `${result.snapshot.score_overall * 100}%` }}
+                  style={{ width: `${resultData.snapshot.score_overall * 100}%` }}
                 />
               </div>
               {resultData.resultCompatibilityTier && (
@@ -983,14 +983,14 @@ export default function ExplorePage() {
             </div>
 
             {/* Dimension Breakdown - Enhanced */}
-            {result.snapshot.score_axes && Object.keys(result.snapshot.score_axes).length > 0 && (
+            {resultData.snapshot.score_axes && Object.keys(resultData.snapshot.score_axes).length > 0 && (
               <div>
                 <h3 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                   <BarChart3 className="w-6 h-6" />
                   Dimension Breakdown
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(result.snapshot.score_axes).map(([axis, score]) => (
+                  {Object.entries(resultData.snapshot.score_axes).map(([axis, score]) => (
                     <div 
                       key={axis} 
                       className="p-5 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-shadow"
@@ -1016,7 +1016,7 @@ export default function ExplorePage() {
             )}
 
             {/* Insights - Enhanced */}
-            {result.snapshot.explanation_summary && (
+            {resultData.snapshot.explanation_summary && (
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
                 <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                   <Heart className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -1024,7 +1024,7 @@ export default function ExplorePage() {
                 </h3>
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-                    {result.snapshot.explanation_summary}
+                    {resultData.snapshot.explanation_summary}
                   </p>
                 </div>
               </div>
@@ -1032,13 +1032,13 @@ export default function ExplorePage() {
 
             {/* Features Used */}
             <div className="flex flex-wrap gap-3">
-              {result.snapshot.astro_used && (
+              {resultData.snapshot.astro_used && (
                 <span className="px-4 py-2 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
                   Astrology Insights
                 </span>
               )}
-              {result.snapshot.num_used && (
+              {resultData.snapshot.num_used && (
                 <span className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 rounded-full text-sm font-medium flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
                   Numerology Insights

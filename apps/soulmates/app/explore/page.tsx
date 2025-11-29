@@ -35,7 +35,8 @@ import {
   recordExploration, 
   getRecommendedArchetypes,
   getArchetypeExplorationCount,
-  type ExplorationBadge 
+  type ExplorationBadge,
+  type ExplorationStats
 } from "@/lib/explorationTracking";
 import { generateShareableMoment, shareToPlatform } from "@/lib/shareableMoments";
 
@@ -63,13 +64,13 @@ export default function ExplorePage() {
   const [userTraits, setUserTraits] = useState<number[] | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [clientScores, setClientScores] = useState<Record<string, number>>({});
-  const [explorationStats, setExplorationStats] = useState({
+  const [explorationStats, setExplorationStats] = useState<ExplorationStats>({
     totalExplorations: 0,
     uniqueArchetypes: 0,
-    explorationHistory: [] as Array<{ archetypeId: string; timestamp: number }>,
-    badges: [] as ExplorationBadge[],
+    explorationHistory: [],
+    badges: [],
     currentStreak: 0,
-    lastExplorationDate: null as number | null
+    lastExplorationDate: null
   });
   const [newBadges, setNewBadges] = useState<ExplorationBadge[]>([]);
   const [showBadgeNotification, setShowBadgeNotification] = useState(false);

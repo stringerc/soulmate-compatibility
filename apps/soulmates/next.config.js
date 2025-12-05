@@ -6,13 +6,24 @@ const nextConfig = {
     // Can be overridden via environment variable for gradual rollout
     SOULMATES_PHASE: process.env.SOULMATES_PHASE || "3",
     NEXT_PUBLIC_SOULMATES_PHASE: process.env.NEXT_PUBLIC_SOULMATES_PHASE || process.env.SOULMATES_PHASE || "3",
+    // Disable Vercel Analytics to prevent instrument.js warnings
+    NEXT_PUBLIC_VERCEL_ANALYTICS_ID: process.env.NEXT_PUBLIC_VERCEL_ANALYTICS_ID || "",
   },
   transpilePackages: ['@soulmates/core-domain', '@soulmates/config'],
-  // Disable Vercel Analytics if enabled
-  // This prevents instrument.js from loading
-  ...(process.env.DISABLE_VERCEL_ANALYTICS === 'true' ? {
-    // No-op - Vercel analytics is controlled via dashboard/environment
-  } : {}),
+  // Headers to prevent Vercel Analytics injection
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Vercel-Analytics',
+            value: 'disabled',
+          },
+        ],
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig

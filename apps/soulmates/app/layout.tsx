@@ -48,46 +48,119 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Soulmates" />
-        {/* Load suppression script FIRST, before any other scripts - BLOCKING (no async/defer) */}
-        {/* Use dangerouslySetInnerHTML to ensure it's truly blocking */}
+        {/* CRITICAL: Suppression MUST run before Vercel's instrument.js */}
+        {/* This inline script executes synchronously in <head> before any external scripts */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Inline suppression - runs IMMEDIATELY before any external scripts
+              // ULTRA-EARLY suppression - runs BEFORE Vercel's instrument.js
               (function() {
                 'use strict';
+                // Store originals immediately
                 const _warn = console.warn.bind(console);
                 const _error = console.error.bind(console);
                 const _log = console.log.bind(console);
+                const _info = console.info.bind(console);
                 
+                // Suppress Zustand deprecation warnings (from Vercel analytics)
                 console.warn = function() {
                   const msg = arguments[0]?.toString() || '';
-                  if (msg.includes('DEPRECATED') || msg.includes('zustand') || msg.includes('Default export')) {
-                    return;
+                  if (
+                    msg.includes('DEPRECATED') || 
+                    msg.includes('zustand') || 
+                    msg.includes('Default export is deprecated') ||
+                    (msg.includes('create') && msg.includes('zustand'))
+                  ) {
+                    return; // Suppress completely
                   }
                   return _warn.apply(console, arguments);
                 };
                 
+                // Suppress 503 errors for compatibility API
                 console.error = function() {
                   const msg = arguments[0]?.toString() || '';
-                  const hasUrl = Array.from(arguments).some(a => typeof a === 'string' && a.includes('/compatibility/explore'));
-                  if ((msg.includes('503') || msg.includes('Service Unavailable')) && hasUrl) {
-                    return;
+                  const argsArray = Array.from(arguments);
+                  const hasCompatibilityUrl = argsArray.some(a => 
+                    typeof a === 'string' && a.includes('/compatibility/explore')
+                  );
+                  
+                  if (
+                    (msg.includes('503') || msg.includes('Service Unavailable')) && 
+                    (hasCompatibilityUrl || msg.includes('/compatibility/explore'))
+                  ) {
+                    return; // Suppress completely
                   }
+                  
+                  if (msg.includes('POST') && msg.includes('503') && hasCompatibilityUrl) {
+                    return; // Suppress completely
+                  }
+                  
                   return _error.apply(console, arguments);
                 };
                 
+                // Suppress network logs
                 console.log = function() {
                   const msg = arguments[0]?.toString() || '';
-                  if (msg.includes('POST') && msg.includes('/compatibility/explore') && msg.includes('503')) {
-                    return;
+                  if (
+                    msg.includes('POST') && 
+                    msg.includes('/compatibility/explore') && 
+                    (msg.includes('503') || msg.includes('Service Unavailable'))
+                  ) {
+                    return; // Suppress completely
                   }
                   return _log.apply(console, arguments);
                 };
+                
+                // Suppress console.info
+                console.info = function() {
+                  const msg = arguments[0]?.toString() || '';
+                  if (
+                    msg.includes('DEPRECATED') || 
+                    msg.includes('zustand') ||
+                    (msg.includes('POST') && msg.includes('/compatibility/explore') && msg.includes('503'))
+                  ) {
+                    return; // Suppress completely
+                  }
+                  return _info.apply(console, arguments);
+                };
+                
+                // Intercept fetch immediately to prevent 503 logging
+                if (window.fetch) {
+                  const originalFetch = window.fetch;
+                  window.fetch = function(input, init) {
+                    const url = typeof input === 'string' ? input : 
+                                input instanceof URL ? input.toString() : 
+                                (input && typeof input === 'object' && 'url' in input ? input.url : '');
+                    
+                    if (url.includes('/compatibility/explore')) {
+                      return originalFetch.call(this, input, init).then(
+                        function(response) {
+                          if (response.status === 503) {
+                            return response; // Return response, don't log
+                          }
+                          return response;
+                        },
+                        function(error) {
+                          // Return mock 503 response instead of throwing
+                          return new Response(JSON.stringify({ 
+                            error: 'Backend unavailable', 
+                            fallback: true 
+                          }), {
+                            status: 503,
+                            statusText: 'Service Unavailable',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                        }
+                      );
+                    }
+                    return originalFetch.call(this, input, init);
+                  };
+                }
               })();
             `,
           }}
         />
+        {/* Backup suppression script */}
         <script src="/suppress-console.js" async={false} defer={false} />
         <script
           dangerouslySetInnerHTML={{

@@ -1,4 +1,109 @@
-exports.id=7110,exports.ids=[7110],exports.modules={11124:(e,t,s)=>{Promise.resolve().then(s.bind(s,51708)),Promise.resolve().then(s.bind(s,19975)),Promise.resolve().then(s.bind(s,33783)),Promise.resolve().then(s.bind(s,17702)),Promise.resolve().then(s.bind(s,47114))},78482:(e,t,s)=>{Promise.resolve().then(s.t.bind(s,24424,23)),Promise.resolve().then(s.t.bind(s,37752,23)),Promise.resolve().then(s.t.bind(s,75275,23)),Promise.resolve().then(s.t.bind(s,29842,23)),Promise.resolve().then(s.t.bind(s,1633,23)),Promise.resolve().then(s.t.bind(s,9224,23))},51708:(e,t,s)=>{"use strict";s.d(t,{AnalyticsProvider:()=>n});var r=s(73227);function n({children:e}){return r.jsx(r.Fragment,{children:e})}s(23677)},19975:(e,t,s)=>{"use strict";function r(){return null}s.d(t,{default:()=>r})},33783:(e,t,s)=>{"use strict";function r(){return null}s.d(t,{default:()=>r}),s(23677)},17702:(e,t,s)=>{"use strict";s.d(t,{default:()=>c});var r=s(73227),n=s(20649),a=s(65479);s(9925);var i=s(34666),o=s(98985),l=s(6);function c(){let{isAuthenticated:e,isLoading:t,userEmail:s}=(0,a.a)(),c=async()=>{};return r.jsx("nav",{className:"border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50",children:r.jsx("div",{className:"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",children:(0,r.jsxs)("div",{className:"flex justify-between items-center h-16",children:[(0,r.jsxs)(n.default,{href:"/",className:"flex items-center gap-2",children:[r.jsx(i.Z,{className:"w-6 h-6 text-pink-600 dark:text-pink-400"}),r.jsx("span",{className:"text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent",children:"Soulmates"})]}),(0,r.jsxs)("div",{className:"flex items-center gap-6",children:[r.jsx(n.default,{href:"/pricing",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition font-medium",children:"Pricing"}),r.jsx(n.default,{href:"/explore",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:"Explore"}),r.jsx(n.default,{href:"/discover",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:"Discover"}),r.jsx(n.default,{href:"/bonds",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:"Bonds"}),!t&&r.jsx(r.Fragment,{children:e?(0,r.jsxs)(r.Fragment,{children:[(0,r.jsxs)(n.default,{href:"/me",className:"flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:[r.jsx(o.Z,{className:"w-4 h-4"}),r.jsx("span",{className:"hidden sm:inline",children:s||"Dashboard"})]}),(0,r.jsxs)("button",{onClick:c,className:"flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition",title:"Sign out",children:[r.jsx(l.Z,{className:"w-4 h-4"}),r.jsx("span",{className:"hidden sm:inline",children:"Sign Out"})]})]}):(0,r.jsxs)(r.Fragment,{children:[r.jsx(n.default,{href:"/login",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:"Sign In"}),r.jsx(n.default,{href:"/signup",className:"px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 font-semibold transition shadow-lg hover:shadow-xl",children:"Sign Up"})]})})]})]})})})}},47114:(e,t,s)=>{"use strict";s.d(t,{default:()=>a});var r=s(73227),n=s(9925);function a({children:e}){return r.jsx(n.SessionProvider,{children:e})}},65479:(e,t,s)=>{"use strict";s.d(t,{a:()=>a});var r=s(23677),n=s(9925);function a(){let{data:e,status:t}=(0,n.useSession)(),[s,a]=(0,r.useState)({isAuthenticated:!1,isLoading:!0,userId:null,userEmail:null});return"loading"===t?{isAuthenticated:!1,isLoading:!0,userId:null,userEmail:null}:e?{isAuthenticated:!0,isLoading:!1,userId:e.userId||e.user?.id||null,userEmail:e.user?.email||null}:s}},43740:(e,t,s)=>{"use strict";s.r(t),s.d(t,{default:()=>u,metadata:()=>d});var r=s(99013);s(20001);var n=s(53189);let a=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/AnalyticsProvider.tsx#AnalyticsProvider`),i=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/SessionProvider.tsx#default`),o=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/NavBar.tsx#default`),l=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/MobileOptimizer.tsx#default`),c=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/ConsoleSuppressor.tsx#default`),d={title:"Soulmates - Self-Discovery & Compatibility",description:"Discover yourself and explore compatibility with soulmates.syncscript.app",icons:{icon:"/favicon.svg"},viewport:{width:"device-width",initialScale:1,maximumScale:5,userScalable:!0,viewportFit:"cover"},themeColor:[{media:"(prefers-color-scheme: light)",color:"#ec4899"},{media:"(prefers-color-scheme: dark)",color:"#1f2937"}],appleWebApp:{capable:!0,statusBarStyle:"default",title:"Soulmates"},formatDetection:{telephone:!1}};function u({children:e}){return(0,r.jsxs)("html",{lang:"en",suppressHydrationWarning:!0,children:[(0,r.jsxs)("head",{children:[r.jsx("link",{rel:"manifest",href:"/manifest.json"}),r.jsx("meta",{name:"mobile-web-app-capable",content:"yes"}),r.jsx("meta",{name:"apple-mobile-web-app-capable",content:"yes"}),r.jsx("meta",{name:"apple-mobile-web-app-status-bar-style",content:"default"}),r.jsx("meta",{name:"apple-mobile-web-app-title",content:"Soulmates"}),r.jsx("script",{src:"/suppress-console.js"}),r.jsx("script",{dangerouslySetInnerHTML:{__html:`
+exports.id=7110,exports.ids=[7110],exports.modules={11124:(e,t,s)=>{Promise.resolve().then(s.bind(s,51708)),Promise.resolve().then(s.bind(s,19975)),Promise.resolve().then(s.bind(s,33783)),Promise.resolve().then(s.bind(s,17702)),Promise.resolve().then(s.bind(s,47114))},78482:(e,t,s)=>{Promise.resolve().then(s.t.bind(s,24424,23)),Promise.resolve().then(s.t.bind(s,37752,23)),Promise.resolve().then(s.t.bind(s,75275,23)),Promise.resolve().then(s.t.bind(s,29842,23)),Promise.resolve().then(s.t.bind(s,1633,23)),Promise.resolve().then(s.t.bind(s,9224,23))},51708:(e,t,s)=>{"use strict";s.d(t,{AnalyticsProvider:()=>n});var r=s(73227);function n({children:e}){return r.jsx(r.Fragment,{children:e})}s(23677)},19975:(e,t,s)=>{"use strict";function r(){return null}s.d(t,{default:()=>r})},33783:(e,t,s)=>{"use strict";function r(){return null}s.d(t,{default:()=>r}),s(23677)},17702:(e,t,s)=>{"use strict";s.d(t,{default:()=>c});var r=s(73227),n=s(20649),i=s(65479);s(9925);var o=s(34666),a=s(98985),l=s(6);function c(){let{isAuthenticated:e,isLoading:t,userEmail:s}=(0,i.a)(),c=async()=>{};return r.jsx("nav",{className:"border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50",children:r.jsx("div",{className:"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",children:(0,r.jsxs)("div",{className:"flex justify-between items-center h-16",children:[(0,r.jsxs)(n.default,{href:"/",className:"flex items-center gap-2",children:[r.jsx(o.Z,{className:"w-6 h-6 text-pink-600 dark:text-pink-400"}),r.jsx("span",{className:"text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent",children:"Soulmates"})]}),(0,r.jsxs)("div",{className:"flex items-center gap-6",children:[r.jsx(n.default,{href:"/pricing",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition font-medium",children:"Pricing"}),r.jsx(n.default,{href:"/explore",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:"Explore"}),r.jsx(n.default,{href:"/discover",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:"Discover"}),r.jsx(n.default,{href:"/bonds",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:"Bonds"}),!t&&r.jsx(r.Fragment,{children:e?(0,r.jsxs)(r.Fragment,{children:[(0,r.jsxs)(n.default,{href:"/me",className:"flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:[r.jsx(a.Z,{className:"w-4 h-4"}),r.jsx("span",{className:"hidden sm:inline",children:s||"Dashboard"})]}),(0,r.jsxs)("button",{onClick:c,className:"flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition",title:"Sign out",children:[r.jsx(l.Z,{className:"w-4 h-4"}),r.jsx("span",{className:"hidden sm:inline",children:"Sign Out"})]})]}):(0,r.jsxs)(r.Fragment,{children:[r.jsx(n.default,{href:"/login",className:"text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition",children:"Sign In"}),r.jsx(n.default,{href:"/signup",className:"px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 font-semibold transition shadow-lg hover:shadow-xl",children:"Sign Up"})]})})]})]})})})}},47114:(e,t,s)=>{"use strict";s.d(t,{default:()=>i});var r=s(73227),n=s(9925);function i({children:e}){return r.jsx(n.SessionProvider,{children:e})}},65479:(e,t,s)=>{"use strict";s.d(t,{a:()=>i});var r=s(23677),n=s(9925);function i(){let{data:e,status:t}=(0,n.useSession)(),[s,i]=(0,r.useState)({isAuthenticated:!1,isLoading:!0,userId:null,userEmail:null});return"loading"===t?{isAuthenticated:!1,isLoading:!0,userId:null,userEmail:null}:e?{isAuthenticated:!0,isLoading:!1,userId:e.userId||e.user?.id||null,userEmail:e.user?.email||null}:s}},43740:(e,t,s)=>{"use strict";s.r(t),s.d(t,{default:()=>p,metadata:()=>u});var r=s(99013);s(20001);var n=s(53189);let i=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/AnalyticsProvider.tsx#AnalyticsProvider`),o=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/SessionProvider.tsx#default`),a=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/NavBar.tsx#default`),l=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/MobileOptimizer.tsx#default`),c=(0,n.createProxy)(String.raw`/Users/Apple/Documents/soul mate/apps/soulmates/components/ConsoleSuppressor.tsx#default`),u={title:"Soulmates - Self-Discovery & Compatibility",description:"Discover yourself and explore compatibility with soulmates.syncscript.app",icons:{icon:"/favicon.svg"},viewport:{width:"device-width",initialScale:1,maximumScale:5,userScalable:!0,viewportFit:"cover"},themeColor:[{media:"(prefers-color-scheme: light)",color:"#ec4899"},{media:"(prefers-color-scheme: dark)",color:"#1f2937"}],appleWebApp:{capable:!0,statusBarStyle:"default",title:"Soulmates"},formatDetection:{telephone:!1}};function p({children:e}){return(0,r.jsxs)("html",{lang:"en",suppressHydrationWarning:!0,children:[(0,r.jsxs)("head",{children:[r.jsx("link",{rel:"manifest",href:"/manifest.json"}),r.jsx("meta",{name:"mobile-web-app-capable",content:"yes"}),r.jsx("meta",{name:"apple-mobile-web-app-capable",content:"yes"}),r.jsx("meta",{name:"apple-mobile-web-app-status-bar-style",content:"default"}),r.jsx("meta",{name:"apple-mobile-web-app-title",content:"Soulmates"}),r.jsx("script",{dangerouslySetInnerHTML:{__html:`
+              // ULTRA-EARLY suppression - runs BEFORE Vercel's instrument.js
+              (function() {
+                'use strict';
+                // Store originals immediately
+                const _warn = console.warn.bind(console);
+                const _error = console.error.bind(console);
+                const _log = console.log.bind(console);
+                const _info = console.info.bind(console);
+                
+                // Suppress Zustand deprecation warnings (from Vercel analytics)
+                console.warn = function() {
+                  const msg = arguments[0]?.toString() || '';
+                  if (
+                    msg.includes('DEPRECATED') || 
+                    msg.includes('zustand') || 
+                    msg.includes('Default export is deprecated') ||
+                    (msg.includes('create') && msg.includes('zustand'))
+                  ) {
+                    return; // Suppress completely
+                  }
+                  return _warn.apply(console, arguments);
+                };
+                
+                // Suppress 503 errors for compatibility API
+                console.error = function() {
+                  const msg = arguments[0]?.toString() || '';
+                  const argsArray = Array.from(arguments);
+                  const hasCompatibilityUrl = argsArray.some(a => 
+                    typeof a === 'string' && a.includes('/compatibility/explore')
+                  );
+                  
+                  if (
+                    (msg.includes('503') || msg.includes('Service Unavailable')) && 
+                    (hasCompatibilityUrl || msg.includes('/compatibility/explore'))
+                  ) {
+                    return; // Suppress completely
+                  }
+                  
+                  if (msg.includes('POST') && msg.includes('503') && hasCompatibilityUrl) {
+                    return; // Suppress completely
+                  }
+                  
+                  return _error.apply(console, arguments);
+                };
+                
+                // Suppress network logs
+                console.log = function() {
+                  const msg = arguments[0]?.toString() || '';
+                  if (
+                    msg.includes('POST') && 
+                    msg.includes('/compatibility/explore') && 
+                    (msg.includes('503') || msg.includes('Service Unavailable'))
+                  ) {
+                    return; // Suppress completely
+                  }
+                  return _log.apply(console, arguments);
+                };
+                
+                // Suppress console.info
+                console.info = function() {
+                  const msg = arguments[0]?.toString() || '';
+                  if (
+                    msg.includes('DEPRECATED') || 
+                    msg.includes('zustand') ||
+                    (msg.includes('POST') && msg.includes('/compatibility/explore') && msg.includes('503'))
+                  ) {
+                    return; // Suppress completely
+                  }
+                  return _info.apply(console, arguments);
+                };
+                
+                // Intercept fetch immediately to prevent 503 logging
+                if (window.fetch) {
+                  const originalFetch = window.fetch;
+                  window.fetch = function(input, init) {
+                    const url = typeof input === 'string' ? input : 
+                                input instanceof URL ? input.toString() : 
+                                (input && typeof input === 'object' && 'url' in input ? input.url : '');
+                    
+                    if (url.includes('/compatibility/explore')) {
+                      return originalFetch.call(this, input, init).then(
+                        function(response) {
+                          if (response.status === 503) {
+                            return response; // Return response, don't log
+                          }
+                          return response;
+                        },
+                        function(error) {
+                          // Return mock 503 response instead of throwing
+                          return new Response(JSON.stringify({ 
+                            error: 'Backend unavailable', 
+                            fallback: true 
+                          }), {
+                            status: 503,
+                            statusText: 'Service Unavailable',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                        }
+                      );
+                    }
+                    return originalFetch.call(this, input, init);
+                  };
+                }
+              })();
+            `}}),r.jsx("script",{src:"/suppress-console.js",async:!1,defer:!1}),r.jsx("script",{dangerouslySetInnerHTML:{__html:`
               // Backup inline suppression (in case external script fails to load)
               (function() {
                 'use strict';
@@ -33,4 +138,4 @@ exports.id=7110,exports.ids=[7110],exports.modules={11124:(e,t,s)=>{Promise.reso
                   };
                 } catch(e) {}
               })();
-            `}})]}),(0,r.jsxs)("body",{className:"bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-200",children:[r.jsx(c,{}),r.jsx(l,{}),r.jsx(i,{children:(0,r.jsxs)(a,{children:[r.jsx(o,{}),e]})})]})]})}},20001:()=>{}};
+            `}})]}),(0,r.jsxs)("body",{className:"bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-200",children:[r.jsx(c,{}),r.jsx(l,{}),r.jsx(o,{children:(0,r.jsxs)(i,{children:[r.jsx(a,{}),e]})})]})]})}},20001:()=>{}};

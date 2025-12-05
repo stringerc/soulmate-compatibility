@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
 
+export const dynamic = 'force-dynamic';
+
 // JWT secret - must match the one used in magic-link route
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || 
                    process.env.JWT_SECRET || 

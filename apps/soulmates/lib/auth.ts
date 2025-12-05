@@ -110,14 +110,29 @@ export function getUserEmail(): string | null {
 }
 
 /**
- * Sign out user
+ * Sign out user - clears all auth data and redirects
  */
 export function signOut(): void {
   if (typeof window === "undefined") {
     return;
   }
+  
+  // Clear all auth-related localStorage items
   localStorage.removeItem("auth_token");
   localStorage.removeItem("user_email");
+  localStorage.removeItem("user_id");
+  
+  // Clear any other auth-related items
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.includes('auth') || key.includes('token') || key.includes('session') || key.includes('nextauth'))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+  
+  // Redirect to home page
   window.location.href = "/";
 }
 

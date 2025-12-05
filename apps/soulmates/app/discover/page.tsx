@@ -45,6 +45,16 @@ function DiscoverPageContent() {
   const [connectedAccounts, setConnectedAccounts] = useState<Set<string>>(new Set());
   const [userInterests, setUserInterests] = useState<any[]>([]);
   const [authModal, setAuthModal] = useState<{ provider: string; authUrl: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Debug: Log modal state changes
+  useEffect(() => {
+    if (authModal) {
+      console.log('[Discover] Auth modal state updated:', authModal);
+    } else {
+      console.log('[Discover] Auth modal cleared');
+    }
+  }, [authModal]);
 
   useEffect(() => {
     if (!isAuthenticated || !userId) return;
@@ -119,31 +129,45 @@ function DiscoverPageContent() {
     }
 
     setLoading(true);
+    setError(null);
+    
     try {
-      console.log('Initiating social connection for:', provider);
-      const result = await connectSocialAccount(provider, userId);
-      console.log('Social connection result:', result);
+      console.log('[Social Auth] Initiating connection for:', provider);
       
-      if (result.success) {
-        // If auth URL provided, show modal for user to authorize
-        if (result.authUrl) {
-          console.log('Setting auth modal with URL:', result.authUrl);
-          setAuthModal({ provider, authUrl: result.authUrl });
-          setLoading(false);
-          return;
-        }
-        
-        // Connection completed immediately
-        setConnectedAccounts(prev => new Set([...prev, provider]));
-        await loadFriendsOfFriends();
-      } else {
-        console.error('Social connection failed:', result.error);
-        alert(result.error || 'Failed to connect. Please try again.');
+      // Call API to get authorization URL
+      const response = await fetch('/api/v1/soulmates/social/initiate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ provider }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+        throw new Error(errorData.error || `API returned ${response.status}`);
       }
+
+      const data = await response.json();
+      console.log('[Social Auth] API response:', data);
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to initiate connection');
+      }
+
+      if (!data.authUrl) {
+        throw new Error('No authorization URL received from server');
+      }
+
+      // Show modal with auth URL
+      console.log('[Social Auth] Setting modal with URL:', data.authUrl);
+      setAuthModal({ provider, authUrl: data.authUrl });
+      setLoading(false);
+      
     } catch (e: any) {
-      console.error('Failed to connect social account:', e);
-      alert('Failed to connect. Please try again. Error: ' + (e.message || 'Unknown error'));
-    } finally {
+      console.error('[Social Auth] Error:', e);
+      const errorMessage = e.message || 'Failed to connect. Please try again.';
+      setError(errorMessage);
       setLoading(false);
     }
   };
@@ -491,13 +515,46 @@ function DiscoverPageContent() {
         )}
 
         {/* Social Auth Modal */}
-        {authModal && (
+        {authModal && authModal.authUrl && (
           <SocialAuthModal
-            provider={authModal.provider as any}
+            provider={authModal.provider as 'facebook' | 'instagram' | 'linkedin' | 'spotify'}
             authUrl={authModal.authUrl}
-            onClose={() => setAuthModal(null)}
-            onComplete={handleAuthComplete}
+            onClose={() => {
+              console.log('[Discover] Modal closed by user');
+              setAuthModal(null);
+            }}
+            onComplete={async () => {
+              console.log('[Discover] Auth completed');
+              await handleAuthComplete();
+              setAuthModal(null);
+            }}
           />
+        )}
+        
+        {/* Error Display */}
+        {error && (
+          <div className="fixed bottom-4 right-4 bg-red-100 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700 rounded-lg p-4 shadow-xl z-[10000] max-w-md">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-red-800 dark:text-red-200 mb-1">Connection Error</p>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

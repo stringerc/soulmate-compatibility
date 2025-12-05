@@ -10,12 +10,41 @@ export default function NavBar() {
   const { isAuthenticated, isLoading, userEmail } = useAuth();
 
   const handleLogout = async () => {
-    // Try NextAuth sign out first
     try {
-      await nextAuthSignOut({ callbackUrl: "/" });
+      // Clear all auth-related data first
+      if (typeof window !== 'undefined') {
+        // Clear NextAuth session
+        try {
+          await nextAuthSignOut({ redirect: false });
+        } catch (nextAuthError) {
+          console.log('NextAuth signOut error (expected if not using NextAuth):', nextAuthError);
+        }
+        
+        // Clear JWT token and all auth data
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('user_id');
+        
+        // Clear any other auth-related items
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('auth') || key.includes('token') || key.includes('session'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
+        // Force JWT signOut (redirects to home)
+        jwtSignOut();
+      }
     } catch (error) {
-      // Fallback to JWT sign out
-      jwtSignOut();
+      console.error('Logout error:', error);
+      // Force clear and redirect even if there's an error
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        window.location.href = '/';
+      }
     }
   };
 

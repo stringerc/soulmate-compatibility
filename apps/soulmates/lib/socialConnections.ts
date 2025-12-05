@@ -160,34 +160,44 @@ export async function connectSocialAccount(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Social initiate API error:', response.status, errorData);
+      const errorMessage = errorData.error || `API returned ${response.status}`;
+      console.error('[Social Connections] API error:', response.status, errorData);
       return { 
         success: false, 
         connectionsAdded: 0, 
-        error: errorData.error || `API returned ${response.status}` 
+        error: errorMessage
       };
     }
 
     const data = await response.json();
 
     if (!data.success) {
-      console.error('Social initiate failed:', data);
+      const errorMessage = data.error || 'Failed to initiate connection';
+      console.error('[Social Connections] Initiate failed:', data);
       return { 
         success: false, 
         connectionsAdded: 0, 
-        error: data.error || 'Failed to initiate connection' 
+        error: errorMessage
       };
     }
 
     // Return auth URL for user to authorize
     if (data.authUrl) {
-      console.log('Social auth URL received:', provider, data.authUrl);
+      console.log('[Social Connections] Auth URL received:', provider, data.authUrl);
       return { 
         success: true, 
         connectionsAdded: 0, 
         authUrl: data.authUrl 
       };
     }
+    
+    // If no authUrl but success=true, something is wrong
+    console.warn('[Social Connections] Success but no authUrl:', data);
+    return {
+      success: false,
+      connectionsAdded: 0,
+      error: 'No authorization URL received'
+    };
 
     // If already connected, try to get connections
     // This would use MCP tools to fetch friends/connections

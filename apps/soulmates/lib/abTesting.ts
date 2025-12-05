@@ -59,17 +59,24 @@ export function trackABTestConversion(
   if (typeof window === 'undefined') return;
 
   try {
-    const { logSoulmatesEvent } = require('@/lib/analytics');
-    logSoulmatesEvent({
-      name: 'ab_test_conversion' as any,
-      payload: {
-        test_name: testName,
-        variant,
-        conversion_event: conversionEvent,
-      },
-    });
+    // Use advanced analytics for better tracking
+    const { trackABTestConversion: trackAdvanced } = require('@/lib/advancedAnalytics');
+    trackAdvanced(testName, variant, conversionEvent);
   } catch (e) {
-    // Silently fail
+    // Fallback to basic analytics
+    try {
+      const { logSoulmatesEvent } = require('@/lib/analytics');
+      logSoulmatesEvent({
+        name: 'ab_test_conversion' as any,
+        payload: {
+          test_name: testName,
+          variant,
+          conversion_event: conversionEvent,
+        },
+      });
+    } catch (e2) {
+      // Silently fail
+    }
   }
 }
 

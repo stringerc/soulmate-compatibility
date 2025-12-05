@@ -1,0 +1,37 @@
+{
+  "name": "Soulmates - Self-Discovery & Compatibility",
+  "short_name": "Soulmates",
+  "description": "Discover yourself and explore compatibility",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ec4899",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "social"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Take Test",
+      "short_name": "Test",
+      "description": "Start your compatibility assessment",
+      "url": "/onboarding",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your profile",
+      "url": "/me",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}
+

@@ -110,20 +110,30 @@ export function updateRetentionStats(updates: Partial<RetentionStats>): void {
  * Track daily activity
  */
 export function trackDailyActivity(activityType: string): void {
+  const stats = getRetentionStats();
   updateRetentionStats({});
   
-  // Log analytics
+  // Log analytics with advanced tracking
   try {
-    const { logSoulmatesEvent } = require('@/lib/analytics');
-    logSoulmatesEvent({
-      name: 'daily_activity' as any,
-      payload: {
-        activity_type: activityType,
-        date: new Date().toISOString().split('T')[0],
-      },
+    const { trackRetentionMetric } = require('@/lib/advancedAnalytics');
+    trackRetentionMetric({
+      daysActive: stats.totalDaysActive + 1,
+      streak: stats.currentStreak,
     });
   } catch (e) {
-    // Silently fail
+    // Fallback to basic analytics
+    try {
+      const { logSoulmatesEvent } = require('@/lib/analytics');
+      logSoulmatesEvent({
+        name: 'daily_activity' as any,
+        payload: {
+          activity_type: activityType,
+          date: new Date().toISOString().split('T')[0],
+        },
+      });
+    } catch (e2) {
+      // Silently fail
+    }
   }
 }
 

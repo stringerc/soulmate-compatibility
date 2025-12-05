@@ -6,6 +6,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { initializeAdvancedAnalytics } from "@/lib/advancedAnalytics";
 
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -44,6 +45,9 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         console.warn("[Analytics] Failed to load Mixpanel:", error);
       });
     }
+
+    // Initialize advanced analytics tracking
+    initializeAdvancedAnalytics();
   }, []);
 
   return <>{children}</>;

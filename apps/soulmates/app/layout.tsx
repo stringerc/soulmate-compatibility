@@ -48,20 +48,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Soulmates" />
+        {/* Load suppression script FIRST, before any other scripts */}
+        <script src="/suppress-console.js" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // ULTRA-EARLY console suppression - runs before ANY other script
-              // This must execute synchronously before Vercel's instrument.js
+              // Backup inline suppression (in case external script fails to load)
               (function() {
                 'use strict';
                 try {
-                  // Capture console methods immediately
-                  const _warn = console.warn;
-                  const _error = console.error;
-                  const _log = console.log;
+                  const _warn = console.warn || function(){};
+                  const _error = console.error || function(){};
+                  const _log = console.log || function(){};
                   
-                  // Suppress Zustand warnings
                   console.warn = function() {
                     const msg = arguments[0]?.toString() || '';
                     if (msg.includes('DEPRECATED') || msg.includes('zustand') || msg.includes('Default export')) {
@@ -70,7 +69,6 @@ export default function RootLayout({
                     return _warn.apply(console, arguments);
                   };
                   
-                  // Suppress 503 errors
                   console.error = function() {
                     const msg = arguments[0]?.toString() || '';
                     const hasUrl = Array.from(arguments).some(a => typeof a === 'string' && a.includes('/compatibility/explore'));
@@ -80,7 +78,6 @@ export default function RootLayout({
                     return _error.apply(console, arguments);
                   };
                   
-                  // Suppress network logs
                   console.log = function() {
                     const msg = arguments[0]?.toString() || '';
                     if (msg.includes('POST') && msg.includes('/compatibility/explore') && msg.includes('503')) {
@@ -88,9 +85,7 @@ export default function RootLayout({
                     }
                     return _log.apply(console, arguments);
                   };
-                } catch(e) {
-                  // Silently fail if suppression doesn't work
-                }
+                } catch(e) {}
               })();
             `,
           }}

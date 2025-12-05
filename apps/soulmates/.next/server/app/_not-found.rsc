@@ -1,22 +1,19 @@
 2:I[5092,[],""]
 3:I[2023,[],""]
-5:I[2277,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-20df0530cc82cb9b.js"],"default"]
-6:I[9473,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-20df0530cc82cb9b.js"],"default"]
-7:I[1496,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-20df0530cc82cb9b.js"],"default"]
-8:I[7426,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-20df0530cc82cb9b.js"],"AnalyticsProvider"]
-9:I[6,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-20df0530cc82cb9b.js"],"default"]
-4:T79f,
-              // ULTRA-EARLY console suppression - runs before ANY other script
-              // This must execute synchronously before Vercel's instrument.js
+5:I[2277,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-17defdf621ebea8c.js"],"default"]
+6:I[9473,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-17defdf621ebea8c.js"],"default"]
+7:I[1496,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-17defdf621ebea8c.js"],"default"]
+8:I[7426,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-17defdf621ebea8c.js"],"AnalyticsProvider"]
+9:I[6,["340","static/chunks/340-613d878cc8f9b260.js","387","static/chunks/387-f1220a8192bdced0.js","185","static/chunks/app/layout-17defdf621ebea8c.js"],"default"]
+4:T677,
+              // Backup inline suppression (in case external script fails to load)
               (function() {
                 'use strict';
                 try {
-                  // Capture console methods immediately
-                  const _warn = console.warn;
-                  const _error = console.error;
-                  const _log = console.log;
+                  const _warn = console.warn || function(){};
+                  const _error = console.error || function(){};
+                  const _log = console.log || function(){};
                   
-                  // Suppress Zustand warnings
                   console.warn = function() {
                     const msg = arguments[0]?.toString() || '';
                     if (msg.includes('DEPRECATED') || msg.includes('zustand') || msg.includes('Default export')) {
@@ -25,7 +22,6 @@
                     return _warn.apply(console, arguments);
                   };
                   
-                  // Suppress 503 errors
                   console.error = function() {
                     const msg = arguments[0]?.toString() || '';
                     const hasUrl = Array.from(arguments).some(a => typeof a === 'string' && a.includes('/compatibility/explore'));
@@ -35,7 +31,6 @@
                     return _error.apply(console, arguments);
                   };
                   
-                  // Suppress network logs
                   console.log = function() {
                     const msg = arguments[0]?.toString() || '';
                     if (msg.includes('POST') && msg.includes('/compatibility/explore') && msg.includes('503')) {
@@ -43,14 +38,12 @@
                     }
                     return _log.apply(console, arguments);
                   };
-                } catch(e) {
-                  // Silently fail if suppression doesn't work
-                }
+                } catch(e) {}
               })();
             a:{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"}
 b:{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"}
 c:{"display":"inline-block"}
 d:{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0}
-0:["BWsuW3Fh-ZkQu5UzpS7am",[[["",{"children":["/_not-found",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],["",{"children":["/_not-found",{"children":["__PAGE__",{},[["$L1",[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":"404"}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],null],null],null]},[null,["$","$L2",null,{"parallelRouterKey":"children","segmentPath":["children","/_not-found","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/1b0e986f8cca1baf.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","suppressHydrationWarning":true,"children":[["$","head",null,{"children":[["$","link",null,{"rel":"manifest","href":"/manifest.json"}],["$","meta",null,{"name":"mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"apple-mobile-web-app-status-bar-style","content":"default"}],["$","meta",null,{"name":"apple-mobile-web-app-title","content":"Soulmates"}],["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$4"}}]]}],["$","body",null,{"className":"bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-200","children":[["$","$L5",null,{}],["$","$L6",null,{}],["$","$L7",null,{"children":["$","$L8",null,{"children":[["$","$L9",null,{}],["$","$L2",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":"$a","children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":"$b","children":"404"}],["$","div",null,{"style":"$c","children":["$","h2",null,{"style":"$d","children":"This page could not be found."}]}]]}]}]],"notFoundStyles":[]}]]}]}]]}]]}]],null],null],["$Le",["$","meta",null,{"name":"robots","content":"noindex"}]]]]]
+0:["s12Ik9Lko0aFpTXkdtu_e",[[["",{"children":["/_not-found",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],["",{"children":["/_not-found",{"children":["__PAGE__",{},[["$L1",[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":"404"}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],null],null],null]},[null,["$","$L2",null,{"parallelRouterKey":"children","segmentPath":["children","/_not-found","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/74384ae06a7fe474.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","suppressHydrationWarning":true,"children":[["$","head",null,{"children":[["$","link",null,{"rel":"manifest","href":"/manifest.json"}],["$","meta",null,{"name":"mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"apple-mobile-web-app-status-bar-style","content":"default"}],["$","meta",null,{"name":"apple-mobile-web-app-title","content":"Soulmates"}],["$","script",null,{"src":"/suppress-console.js"}],["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$4"}}]]}],["$","body",null,{"className":"bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-200","children":[["$","$L5",null,{}],["$","$L6",null,{}],["$","$L7",null,{"children":["$","$L8",null,{"children":[["$","$L9",null,{}],["$","$L2",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":"$a","children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":"$b","children":"404"}],["$","div",null,{"style":"$c","children":["$","h2",null,{"style":"$d","children":"This page could not be found."}]}]]}]}]],"notFoundStyles":[]}]]}]}]]}]]}]],null],null],["$Le",["$","meta",null,{"name":"robots","content":"noindex"}]]]]]
 e:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"Soulmates - Self-Discovery & Compatibility"}],["$","meta","3",{"name":"description","content":"Discover yourself and explore compatibility with soulmates.syncscript.app"}],["$","meta","4",{"name":"format-detection","content":"telephone=no"}],["$","meta","5",{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta","6",{"name":"apple-mobile-web-app-title","content":"Soulmates"}],["$","meta","7",{"name":"apple-mobile-web-app-status-bar-style","content":"default"}],["$","link","8",{"rel":"icon","href":"/favicon.svg"}]]
 1:null

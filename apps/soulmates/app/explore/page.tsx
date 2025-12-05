@@ -286,6 +286,7 @@ function ExplorePageContent() {
       }
 
       // Try backend API for enhanced results (astrology, numerology)
+      // If backend unavailable, client-side result is already shown
       try {
         const data = await compatibilityApi.explore({
           hypothetical_profile: {
@@ -295,6 +296,16 @@ function ExplorePageContent() {
           allow_astrology: true,
           allow_numerology: true,
         }) as CompatibilityResult;
+
+        // If backend returned fallback error, skip merging (client-side already shown)
+        if ((data as any)?.fallback || (data as any)?.error) {
+          // Client-side result already displayed, just log
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Backend unavailable, using client-side calculation");
+          }
+          setLoading(false);
+          return;
+        }
 
         // Merge backend results with client-side insights
         if (clientCompatibility) {

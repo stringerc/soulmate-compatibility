@@ -2,6 +2,7 @@
  * Next.js API Route: Compatibility Proxy
  * 
  * Proxies requests to FastAPI backend for production deployment.
+ * Falls back to client-side calculation if backend is unavailable.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const authHeader = request.headers.get("authorization");
     
+    // Try backend first
     let response: Response;
     try {
       response = await fetch(`${FASTAPI_URL}/api/v1/soulmates/compatibility/explore`, {
@@ -26,33 +28,37 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(10000), // 10 second timeout for compatibility calculation
+        signal: AbortSignal.timeout(5000), // 5 second timeout
       });
-    } catch (fetchError: any) {
-      if (fetchError.name === 'AbortError' || fetchError.message?.includes('fetch')) {
-        console.warn("Backend not reachable, returning error");
-        return NextResponse.json(
-          { error: "Backend service unavailable. Please try again later." },
-          { status: 503 }
-        );
+      
+      if (response.ok) {
+        const data = await response.json();
+        return NextResponse.json(data);
       }
-      throw fetchError;
+    } catch (fetchError: any) {
+      // Backend unavailable - this is expected in development
+      // Frontend will use client-side calculation instead
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Backend not available, frontend will use client-side calculation");
+      }
     }
     
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Failed to calculate compatibility" }));
-      return NextResponse.json(
-        { error: error.detail || "Failed to calculate compatibility" },
-        { status: response.status }
-      );
-    }
-    
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Backend unavailable - return graceful error
+    // Frontend already has client-side fallback
+    return NextResponse.json(
+      { 
+        error: "Backend service unavailable. Using client-side calculation.",
+        fallback: true 
+      },
+      { status: 503 }
+    );
   } catch (error) {
     console.error("Compatibility API proxy error:", error);
     return NextResponse.json(
-      { error: "Backend service unavailable. Please try again later." },
+      { 
+        error: "Backend service unavailable. Using client-side calculation.",
+        fallback: true 
+      },
       { status: 503 }
     );
   }

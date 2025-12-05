@@ -71,27 +71,51 @@ async function apiRequest<T>(
         throw new Error("Unauthorized");
       }
       
-      // For 503 errors on compatibility explore, silently handle (client-side fallback)
-      if (response.status === 503 && endpoint.includes('/compatibility/explore')) {
-        const error = await response.json().catch(() => ({ detail: "Backend unavailable" }));
-        const fallbackError = new Error("Backend service unavailable (client-side fallback active)") as any;
-        fallbackError.isFallback = true;
-        fallbackError.status = 503;
-        throw fallbackError;
+      // For compatibility explore, check if response has fallback flag
+      // (API route now returns 200 OK with fallback flag instead of 503)
+      if (endpoint.includes('/compatibility/explore')) {
+        try {
+          const data = await response.json();
+          if (data.fallback) {
+            // Return the fallback response (frontend will use client-side)
+            return data as any;
+          }
+        } catch (e) {
+          // If JSON parse fails, continue with normal error handling
+        }
       }
       
       const error = await response.json().catch(() => ({ detail: "Unknown error" }));
       throw new Error(error.detail || error.error || `HTTP ${response.status}`);
     }
     
-    return response.json();
+    const data = await response.json();
+    
+    // Check for fallback flag in successful responses (for compatibility explore)
+    if (endpoint.includes('/compatibility/explore') && data.fallback) {
+      // Return fallback response (frontend will use client-side calculation)
+      return data as any;
+    }
+    
+    return data;
   } catch (error: any) {
-    // Silently handle 503 errors for compatibility explore (expected behavior)
-    if (error?.status === 503 && endpoint.includes('/compatibility/explore')) {
-      // Re-throw as fallback error (will be caught by explore page)
-      const fallbackError = new Error("Backend service unavailable (client-side fallback active)") as any;
-      fallbackError.isFallback = true;
-      throw fallbackError;
+    // Silently handle network errors for compatibility explore (expected when backend unavailable)
+    if (endpoint.includes('/compatibility/explore')) {
+      // Return fallback response instead of throwing error
+      return {
+        success: true,
+        fallback: true,
+        message: "Using client-side calculation (backend unavailable)",
+        snapshot: {
+          id: "fallback",
+          score_overall: 0,
+          score_axes: {},
+          astro_used: false,
+          num_used: false,
+          soulmate_flag: false,
+          explanation_summary: "Client-side calculation active",
+        },
+      } as any;
     }
     throw error;
   }

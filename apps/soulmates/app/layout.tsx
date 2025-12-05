@@ -48,8 +48,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Soulmates" />
-        {/* Load suppression script FIRST, before any other scripts */}
-        <script src="/suppress-console.js" />
+        {/* Load suppression script FIRST, before any other scripts - BLOCKING (no async/defer) */}
+        <script src="/suppress-console.js" async={false} defer={false} />
         <script
           dangerouslySetInnerHTML={{
             __html: `

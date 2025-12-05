@@ -23,6 +23,7 @@ import { connectSpotify, connectGoodreads, getUserInterests, findSharedInterests
 import { getUpcomingEvents, registerForEvent, getUserEventRegistrations, createMockEvents } from "@/lib/communityEvents";
 import { calculateCompatibility } from "@/lib/compatibilityEngine";
 import { ARCHETYPAL_PROFILES } from "@/lib/archetypalProfiles";
+import SocialAuthModal from "@/components/SocialAuthModal";
 
 interface DiscoverMatch {
   userId: string;
@@ -43,6 +44,7 @@ function DiscoverPageContent() {
   const [events, setEvents] = useState<any[]>([]);
   const [connectedAccounts, setConnectedAccounts] = useState<Set<string>>(new Set());
   const [userInterests, setUserInterests] = useState<any[]>([]);
+  const [authModal, setAuthModal] = useState<{ provider: string; authUrl: string } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !userId) return;
@@ -117,13 +119,33 @@ function DiscoverPageContent() {
     try {
       const result = await connectSocialAccount(provider, userId);
       if (result.success) {
+        // If auth URL provided, show modal for user to authorize
+        if (result.authUrl) {
+          setAuthModal({ provider, authUrl: result.authUrl });
+          setLoading(false);
+          return;
+        }
+        
+        // Connection completed immediately
         setConnectedAccounts(prev => new Set([...prev, provider]));
         await loadFriendsOfFriends();
+      } else {
+        alert(result.error || 'Failed to connect. Please try again.');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to connect social account:', e);
+      alert('Failed to connect. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAuthComplete = async () => {
+    // Refresh connections after auth
+    await loadFriendsOfFriends();
+    // Check which provider was connected
+    if (authModal) {
+      setConnectedAccounts(prev => new Set([...prev, authModal.provider]));
     }
   };
 
@@ -134,12 +156,23 @@ function DiscoverPageContent() {
     try {
       const result = await connectSpotify(userId);
       if (result.success) {
+        // If auth URL provided, show modal for user to authorize
+        if (result.redirectUrl) {
+          setAuthModal({ provider: 'spotify', authUrl: result.redirectUrl });
+          setLoading(false);
+          return;
+        }
+        
+        // Connection completed immediately
         setConnectedAccounts(prev => new Set([...prev, 'spotify']));
         const interests = getUserInterests(userId);
         setUserInterests(interests);
+      } else {
+        alert('Spotify requires additional configuration. Please provide client_id and client_secret in MCP settings.');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to connect Spotify:', e);
+      alert('Failed to connect Spotify. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -447,6 +480,16 @@ function DiscoverPageContent() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Social Auth Modal */}
+        {authModal && (
+          <SocialAuthModal
+            provider={authModal.provider as any}
+            authUrl={authModal.authUrl}
+            onClose={() => setAuthModal(null)}
+            onComplete={handleAuthComplete}
+          />
         )}
       </div>
     </div>

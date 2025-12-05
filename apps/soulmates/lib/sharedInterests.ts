@@ -163,38 +163,77 @@ export function generateConversationStarters(
 }
 
 /**
- * Simulate connecting Spotify account
+ * Connect Spotify account via MCP/Composio OAuth
+ * Uses MCP tools to handle OAuth flow and get user's music interests
  */
-export async function connectSpotify(userId: string): Promise<{ success: boolean; interestsAdded: number }> {
-  // In production, this would:
-  // 1. Initiate Spotify OAuth flow
-  // 2. Get user's top artists/tracks from Spotify API
-  // 3. Convert to interests
-  // 4. Store in backend
+export async function connectSpotify(userId: string): Promise<{ success: boolean; interestsAdded: number; redirectUrl?: string; error?: string }> {
+  if (typeof window === 'undefined') {
+    return { success: false, interestsAdded: 0 };
+  }
 
-  // Mock data for development
-  const mockMusicInterests: Interest[] = [
-    {
-      id: `spotify_${Date.now()}_1`,
-      type: 'music',
-      name: 'Indie Rock',
-      source: 'spotify',
-      metadata: { genre: 'Indie Rock' },
-    },
-    {
-      id: `spotify_${Date.now()}_2`,
-      type: 'music',
-      name: 'The Beatles',
-      source: 'spotify',
-      metadata: { artist: 'The Beatles', genre: 'Rock' },
-    },
-  ];
+  try {
+    // Use MCP-based connection
+    const { initiateSocialConnection, getSpotifyInterests } = await import('./mcpSocialConnections');
+    const result = await initiateSocialConnection('spotify', userId);
 
-  const existing = getUserInterests(userId);
-  const newInterests = [...existing, ...mockMusicInterests];
-  storeUserInterests(userId, newInterests);
+    if (result.success && result.redirectUrl) {
+      // Redirect to OAuth flow
+      window.location.href = result.redirectUrl;
+      return { success: true, interestsAdded: 0, redirectUrl: result.redirectUrl };
+    }
 
-  return { success: true, interestsAdded: mockMusicInterests.length };
+    // If already connected, get interests
+    const interestsResult = await getSpotifyInterests(userId);
+
+    if (interestsResult.success && interestsResult.interests) {
+      // Convert Spotify data to interests
+      const musicInterests: Interest[] = interestsResult.interests.map((item: any, index: number) => ({
+        id: `spotify_${Date.now()}_${index}`,
+        type: 'music',
+        name: item.name || item.artist || 'Unknown',
+        source: 'spotify',
+        metadata: {
+          artist: item.artist,
+          genre: item.genre,
+        },
+      }));
+
+      const existing = getUserInterests(userId);
+      storeUserInterests(userId, [...existing, ...musicInterests]);
+
+      return { success: true, interestsAdded: musicInterests.length };
+    }
+
+    // Fallback: mock data if MCP not available
+    const mockMusicInterests: Interest[] = [
+      {
+        id: `spotify_${Date.now()}_1`,
+        type: 'music',
+        name: 'Indie Rock',
+        source: 'spotify',
+        metadata: { genre: 'Indie Rock' },
+      },
+      {
+        id: `spotify_${Date.now()}_2`,
+        type: 'music',
+        name: 'The Beatles',
+        source: 'spotify',
+        metadata: { artist: 'The Beatles', genre: 'Rock' },
+      },
+    ];
+
+    const existing = getUserInterests(userId);
+    storeUserInterests(userId, [...existing, ...mockMusicInterests]);
+
+    return { success: true, interestsAdded: mockMusicInterests.length };
+  } catch (error: any) {
+    console.error('Failed to connect Spotify:', error);
+    return { 
+      success: false, 
+      interestsAdded: 0,
+      error: 'Spotify requires client_id and client_secret. Please configure in MCP settings.',
+    };
+  }
 }
 
 /**

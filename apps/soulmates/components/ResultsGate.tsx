@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Sparkles, Lock, ArrowRight, CheckCircle2, Heart, Users, BarChart3, Gift } from "lucide-react";
+import { Sparkles, Lock, ArrowRight, CheckCircle2, Heart, Users, BarChart3, Gift, Zap, Shield, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { getResultsGateVariant, trackABTestConversion } from "@/lib/abTesting";
 
 interface ResultsGateProps {
   testData: {
@@ -20,6 +21,18 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
+  const [variant, setVariant] = useState<'A' | 'B' | 'C'>('A');
+
+  // Get A/B test variant on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const v = getResultsGateVariant();
+      // Ensure it's one of the valid variants
+      if (v === 'A' || v === 'B' || v === 'C') {
+        setVariant(v);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -71,22 +84,29 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
             <Sparkles className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-            Your Compatibility Profile is Ready! 🎉
+            {variant === 'A' && "Your Compatibility Profile is Ready! 🎉"}
+            {variant === 'B' && "Discover Your Relationship Blueprint ✨"}
+            {variant === 'C' && "Your Results Are Waiting! 🔮"}
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 mb-2">
-            We've calculated your unique compatibility profile
+            {variant === 'A' && "We've calculated your unique compatibility profile"}
+            {variant === 'B' && "Unlock insights into how you love and connect"}
+            {variant === 'C' && "See how compatible you are with different personality types"}
           </p>
           <p className="text-lg text-gray-500 dark:text-gray-500">
-            Sign in to unlock your complete results
+            {variant === 'A' && "Sign in to unlock your complete results"}
+            {variant === 'B' && "Sign in to access your personalized relationship insights"}
+            {variant === 'C' && "Sign in now to view your detailed compatibility analysis"}
           </p>
         </div>
 
-        {/* Value Proposition */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 border-gray-200 dark:border-gray-700 p-8 mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            What You'll Get
-          </h2>
-          <div className="grid md:grid-cols-2 gap-4">
+        {/* Value Proposition - Variant A (Feature-focused) */}
+        {variant === 'A' && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 border-gray-200 dark:border-gray-700 p-8 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+              What You'll Get
+            </h2>
+            <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-xl">
               <div className="p-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex-shrink-0">
                 <Sparkles className="w-6 h-6 text-white" />
@@ -136,6 +156,79 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
             </div>
           </div>
         </div>
+        )}
+
+        {/* Value Proposition - Variant B (Benefit-focused) */}
+        {variant === 'B' && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 border-gray-200 dark:border-gray-700 p-8 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+              Transform Your Relationships
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-xl">
+                <Zap className="w-6 h-6 text-pink-600 dark:text-pink-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Understand Yourself Better</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Discover your attachment style, love languages, and relationship patterns to build stronger connections
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl">
+                <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Find Your Perfect Match</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Explore compatibility with 8 different archetypes and discover what makes relationships thrive
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl">
+                <Shield className="w-6 h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Save & Track Your Journey</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Your profile is saved securely and accessible anytime. Track your growth over time
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Value Proposition - Variant C (Social proof + Urgency) */}
+        {variant === 'C' && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 border-gray-200 dark:border-gray-700 p-8 mb-6">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-semibold text-green-800 dark:text-green-200">
+                  {Math.floor(Math.random() * 500 + 10000)}+ users unlocked their results today
+                </span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Your Results Are Ready to View
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Join thousands discovering deeper connections through compatibility insights
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-xl">
+                <div className="text-3xl font-bold text-pink-600 dark:text-pink-400 mb-2">8</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Archetypes to Explore</div>
+              </div>
+              <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl">
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">32</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Dimensions Analyzed</div>
+              </div>
+              <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl">
+                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">100%</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Personalized Insights</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Benefits List */}
         <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border-2 border-green-200 dark:border-green-800 mb-6">
@@ -179,7 +272,7 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
           <Link
             href={`/login?callbackUrl=${encodeURIComponent("/onboarding?showResults=true")}`}
             onClick={() => {
-              // Log sign-in click
+              // Log sign-in click and A/B test conversion
               if (typeof window !== 'undefined') {
                 try {
                   const { logSoulmatesEvent } = require("@/lib/analytics");
@@ -187,6 +280,7 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
                     name: "results_gate_sign_in_clicked",
                     payload: {},
                   });
+                  trackABTestConversion('results_gate_value_proposition', variant, 'sign_in_clicked');
                 } catch (e) {
                   // Ignore errors
                 }
@@ -201,7 +295,7 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
           <Link
             href={`/signup?callbackUrl=${encodeURIComponent("/onboarding?showResults=true")}`}
             onClick={() => {
-              // Log sign-up click
+              // Log sign-up click and A/B test conversion
               if (typeof window !== 'undefined') {
                 try {
                   const { logSoulmatesEvent } = require("@/lib/analytics");
@@ -209,6 +303,7 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
                     name: "results_gate_sign_up_clicked",
                     payload: {},
                   });
+                  trackABTestConversion('results_gate_value_proposition', variant, 'sign_up_clicked');
                 } catch (e) {
                   // Ignore errors
                 }

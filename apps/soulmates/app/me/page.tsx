@@ -7,6 +7,7 @@ import { billingApi } from "@/lib/api";
 import PlanBadge from "@/components/PlanBadge";
 import ReferralProgram from "@/components/ReferralProgram";
 import DataRecoveryBanner from "@/components/DataRecoveryBanner";
+import DailyFeatures from "@/components/DailyFeatures";
 import AuthGuard from "@/components/AuthGuard";
 import { 
   Heart, 
@@ -464,6 +465,9 @@ function DashboardPageContent() {
           onExport={handleExportData}
           onSync={handleForceSync}
         />
+
+        {/* Daily Features */}
+        <DailyFeatures />
 
         {/* Stats Grid */}
         {stats && (

@@ -158,9 +158,20 @@ export async function connectSocialAccount(
       body: JSON.stringify({ provider }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Social initiate API error:', response.status, errorData);
+      return { 
+        success: false, 
+        connectionsAdded: 0, 
+        error: errorData.error || `API returned ${response.status}` 
+      };
+    }
+
     const data = await response.json();
 
     if (!data.success) {
+      console.error('Social initiate failed:', data);
       return { 
         success: false, 
         connectionsAdded: 0, 
@@ -170,6 +181,7 @@ export async function connectSocialAccount(
 
     // Return auth URL for user to authorize
     if (data.authUrl) {
+      console.log('Social auth URL received:', provider, data.authUrl);
       return { 
         success: true, 
         connectionsAdded: 0, 

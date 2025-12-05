@@ -113,14 +113,21 @@ function DiscoverPageContent() {
   };
 
   const handleConnectSocial = async (provider: 'facebook' | 'instagram' | 'linkedin') => {
-    if (!userId) return;
+    if (!userId) {
+      alert('Please sign in to connect social accounts.');
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log('Initiating social connection for:', provider);
       const result = await connectSocialAccount(provider, userId);
+      console.log('Social connection result:', result);
+      
       if (result.success) {
         // If auth URL provided, show modal for user to authorize
         if (result.authUrl) {
+          console.log('Setting auth modal with URL:', result.authUrl);
           setAuthModal({ provider, authUrl: result.authUrl });
           setLoading(false);
           return;
@@ -130,11 +137,12 @@ function DiscoverPageContent() {
         setConnectedAccounts(prev => new Set([...prev, provider]));
         await loadFriendsOfFriends();
       } else {
+        console.error('Social connection failed:', result.error);
         alert(result.error || 'Failed to connect. Please try again.');
       }
     } catch (e: any) {
       console.error('Failed to connect social account:', e);
-      alert('Failed to connect. Please try again.');
+      alert('Failed to connect. Please try again. Error: ' + (e.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

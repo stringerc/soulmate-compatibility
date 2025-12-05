@@ -47,6 +47,23 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Soulmates" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Early console warning suppression (before Vercel instrument.js loads)
+              (function() {
+                const originalWarn = console.warn;
+                console.warn = function(...args) {
+                  const msg = args[0]?.toString() || '';
+                  if (msg.includes('DEPRECATED') && (msg.includes('zustand') || msg.includes('Default export is deprecated'))) {
+                    return;
+                  }
+                  originalWarn.apply(console, args);
+                };
+              })();
+            `,
+          }}
+        />
       </head>
       <body className="bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-200">
         <MobileOptimizer />

@@ -6,6 +6,7 @@ import { logSoulmatesEvent } from "@/lib/analytics";
 import { billingApi } from "@/lib/api";
 import PlanBadge from "@/components/PlanBadge";
 import ReferralProgram from "@/components/ReferralProgram";
+import DataRecoveryBanner from "@/components/DataRecoveryBanner";
 import { 
   Heart, 
   Sparkles, 
@@ -21,7 +22,11 @@ import {
   BarChart3,
   Star,
   Gift,
-  Share2
+  Share2,
+  Download,
+  Upload,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
 
 interface Profile {
@@ -46,6 +51,28 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [syncStatus, setSyncStatus] = useState<{ queued: number; lastSync: number | null; isSyncing: boolean }>({ queued: 0, lastSync: null, isSyncing: false });
+  const [exporting, setExporting] = useState(false);
+  const [recovering, setRecovering] = useState(false);
+
+  useEffect(() => {
+    // Initialize sync queue processing
+    const initSync = async () => {
+      if (typeof window !== 'undefined') {
+        const { initializeSyncQueue, getSyncStatus } = await import("@/lib/dataSync");
+        initializeSyncQueue();
+        
+        // Update sync status
+        const updateSyncStatus = () => {
+          setSyncStatus(getSyncStatus());
+        };
+        updateSyncStatus();
+        const interval = setInterval(updateSyncStatus, 5000);
+        return () => clearInterval(interval);
+      }
+    };
+    initSync();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -123,6 +150,11 @@ export default function DashboardPage() {
             }
           }
         }
+
+        // Update last sync time
+        if (profileResponse && typeof window !== 'undefined') {
+          localStorage.setItem('soulmates_last_sync', Date.now().toString());
+        }
       } catch (err: any) {
         if (process.env.NODE_ENV === 'development') {
           console.error("Error loading data:", err);
@@ -134,6 +166,86 @@ export default function DashboardPage() {
     };
     loadData();
   }, []);
+
+  const handleExportData = async () => {
+    try {
+      setExporting(true);
+      const { exportUserData } = await import("@/lib/dataExport");
+      await exportUserData();
+      
+      // Show success message
+      alert("Your data has been exported successfully! Check your downloads folder.");
+    } catch (error) {
+      console.error("Export error:", error);
+      alert(`Failed to export data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleRecoverData = async () => {
+    try {
+      setRecovering(true);
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) {
+          setRecovering(false);
+          return;
+        }
+
+        try {
+          const { importUserData, restoreUserData } = await import("@/lib/dataExport");
+          const data = await importUserData(file);
+          await restoreUserData(data);
+          
+          // Reload page to show recovered data
+          alert("Data recovered successfully! Refreshing page...");
+          window.location.reload();
+        } catch (error) {
+          console.error("Recovery error:", error);
+          alert(`Failed to recover data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+          setRecovering(false);
+        }
+      };
+      input.click();
+    } catch (error) {
+      console.error("Recovery error:", error);
+      alert(`Failed to start recovery: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setRecovering(false);
+    }
+  };
+
+  const handleForceSync = async () => {
+    try {
+      if (!profile) {
+        alert("No profile data to sync");
+        return;
+      }
+
+      const { syncProfileToBackend } = await import("@/lib/dataSync");
+      const success = await syncProfileToBackend({
+        traits: (profile as any).traits,
+        primary_archetype: profile.primary_archetype,
+        attachment_style: profile.attachment_style,
+        love_languages: profile.love_languages,
+      });
+
+      if (success) {
+        localStorage.setItem('soulmates_last_sync', Date.now().toString());
+        setSyncStatus({ ...syncStatus, lastSync: Date.now(), queued: 0 });
+        alert("Profile synced successfully to your account!");
+      } else {
+        alert("Sync queued. Your data will be saved automatically when the connection is restored.");
+      }
+    } catch (error) {
+      console.error("Sync error:", error);
+      alert(`Failed to sync: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
 
   // Memoized quick actions
   const quickActions = useMemo(() => [
@@ -282,14 +394,75 @@ export default function DashboardPage() {
                   Continue your self-discovery journey
                 </p>
               </div>
-              {subscription && (
-                <div className="flex-shrink-0">
-                  <PlanBadge tier={subscription.tier as "FREE" | "PLUS" | "COUPLE_PREMIUM"} />
+              <div className="flex items-center gap-4">
+                {subscription && (
+                  <div className="flex-shrink-0">
+                    <PlanBadge tier={subscription.tier as "FREE" | "PLUS" | "COUPLE_PREMIUM"} />
+                  </div>
+                )}
+                {/* Data Management Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExportData}
+                    disabled={exporting}
+                    className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-all flex items-center gap-2 text-sm font-medium disabled:opacity-50"
+                    title="Export your data as JSON"
+                  >
+                    <Download className="w-4 h-4" />
+                    {exporting ? "Exporting..." : "Export"}
+                  </button>
+                  <button
+                    onClick={handleRecoverData}
+                    disabled={recovering}
+                    className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-all flex items-center gap-2 text-sm font-medium disabled:opacity-50"
+                    title="Recover data from JSON file"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {recovering ? "Recovering..." : "Recover"}
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
+            
+            {/* Sync Status Indicator */}
+            {(syncStatus.queued > 0 || syncStatus.lastSync === null) && (
+              <div className="mt-4 flex items-center gap-2 text-sm bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                {syncStatus.queued > 0 ? (
+                  <>
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{syncStatus.queued} item(s) queued for sync</span>
+                    <button
+                      onClick={handleForceSync}
+                      className="ml-auto px-3 py-1 bg-white/20 rounded hover:bg-white/30 transition-all text-xs font-medium flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Sync Now
+                    </button>
+                  </>
+                ) : syncStatus.lastSync === null ? (
+                  <>
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Data not synced to account</span>
+                    <button
+                      onClick={handleForceSync}
+                      className="ml-auto px-3 py-1 bg-white/20 rounded hover:bg-white/30 transition-all text-xs font-medium flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Sync Now
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Data Recovery Banner */}
+        <DataRecoveryBanner 
+          profile={profile} 
+          onExport={handleExportData}
+          onSync={handleForceSync}
+        />
 
         {/* Stats Grid */}
         {stats && (

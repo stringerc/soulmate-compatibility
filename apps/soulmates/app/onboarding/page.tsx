@@ -45,24 +45,40 @@ export default function OnboardingPage() {
       const attachmentStyle = calculateAttachmentStyle(traits);
       const loveLanguages = calculateLoveLanguages(traits);
       
-      // Save profile to backend (with timeout)
+      // Save profile to backend with improved sync logic
       const { profileApi } = await import("@/lib/api");
+      const { syncProfileToBackend } = await import("@/lib/dataSync");
       
-      // Use Promise.race to add timeout
-      const savePromise = profileApi.createOrUpdate({
+      const profileData = {
         traits: traits, // Save the full traits array
         primary_archetype: primaryArchetype,
         attachment_style: attachmentStyle,
         love_languages: loveLanguages,
         astrology_meta: birthdate ? { birthdate } : undefined,
         numerology_meta: birthdate ? { birthdate } : undefined,
-      });
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Request timeout")), 10000)
-      );
-      
-      const result = await Promise.race([savePromise, timeoutPromise]) as any;
+      };
+
+      // Try to sync to backend (with retry logic)
+      let result: any = null;
+      try {
+        const syncSuccess = await syncProfileToBackend(profileData);
+        
+        if (syncSuccess) {
+          // If sync succeeded, get the saved profile
+          try {
+            result = await profileApi.get();
+          } catch (e) {
+            // If get fails, create a mock result
+            result = { profile: profileData };
+          }
+        } else {
+          // Sync queued - create mock result
+          result = { profile: profileData, saved_locally: true };
+        }
+      } catch (error) {
+        // Sync failed - will be queued automatically
+        result = { profile: profileData, saved_locally: true };
+      }
 
       // Log analytics event (deferred)
       if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
@@ -89,19 +105,27 @@ export default function OnboardingPage() {
           const profileToStore = {
             ...(result?.profile || {}),
             traits: traits,
-            primary_archetype: result?.profile?.primary_archetype || (await import("@/lib/profileCalculations")).calculatePrimaryArchetype(traits),
-            attachment_style: result?.profile?.attachment_style || (await import("@/lib/profileCalculations")).calculateAttachmentStyle(traits),
-            love_languages: result?.profile?.love_languages || (await import("@/lib/profileCalculations")).calculateLoveLanguages(traits),
+            primary_archetype: result?.profile?.primary_archetype || primaryArchetype,
+            attachment_style: result?.profile?.attachment_style || attachmentStyle,
+            love_languages: result?.profile?.love_languages || loveLanguages,
             calculated_at: Date.now(),
+            synced_at: result?.profile?.saved_locally ? null : Date.now(),
           };
           
           localStorage.setItem('soulmates_profile', JSON.stringify(profileToStore));
+          
+          // Update last sync time if successfully synced
+          if (!result?.profile?.saved_locally) {
+            localStorage.setItem('soulmates_last_sync', Date.now().toString());
+          }
+          
           // Only log in development
           if (process.env.NODE_ENV === 'development') {
             console.log("✅ Profile stored in localStorage for dashboard", {
               primary_archetype: profileToStore.primary_archetype,
               attachment_style: profileToStore.attachment_style,
               love_languages: profileToStore.love_languages,
+              synced: !result?.profile?.saved_locally,
             });
           }
         } catch (e) {

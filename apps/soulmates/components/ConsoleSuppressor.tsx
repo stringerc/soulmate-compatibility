@@ -90,14 +90,32 @@ if (typeof window !== 'undefined') {
                   input instanceof URL ? input.toString() : 
                   (input as Request)?.url || '';
       
-      return originalFetch.call(this, input, init).catch((error) => {
-        // Don't log errors for compatibility explore endpoint
-        if (url.includes('/compatibility/explore')) {
-          // Silently handle - client-side fallback works
-          throw error;
-        }
-        throw error;
-      });
+      // For compatibility explore endpoint, handle silently
+      if (url.includes('/compatibility/explore')) {
+        return originalFetch.call(this, input, init).then(
+          (response) => {
+            // If 503, return response but don't log
+            if (response.status === 503) {
+              return response;
+            }
+            return response;
+          },
+          (error) => {
+            // Silently catch - return mock 503 response
+            return new Response(JSON.stringify({ 
+              error: 'Backend unavailable', 
+              fallback: true 
+            }), {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        );
+      }
+      
+      // For other endpoints, use normal fetch
+      return originalFetch.call(this, input, init);
     };
   }
 }

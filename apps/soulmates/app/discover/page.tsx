@@ -515,7 +515,7 @@ function DiscoverPageContent() {
         )}
 
         {/* Social Auth Modal */}
-        {authModal && authModal.authUrl && (
+        {authModal && (
           <SocialAuthModal
             provider={authModal.provider as 'facebook' | 'instagram' | 'linkedin' | 'spotify'}
             authUrl={authModal.authUrl}

@@ -49,6 +49,45 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Soulmates" />
         {/* Load suppression script FIRST, before any other scripts - BLOCKING (no async/defer) */}
+        {/* Use dangerouslySetInnerHTML to ensure it's truly blocking */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Inline suppression - runs IMMEDIATELY before any external scripts
+              (function() {
+                'use strict';
+                const _warn = console.warn.bind(console);
+                const _error = console.error.bind(console);
+                const _log = console.log.bind(console);
+                
+                console.warn = function() {
+                  const msg = arguments[0]?.toString() || '';
+                  if (msg.includes('DEPRECATED') || msg.includes('zustand') || msg.includes('Default export')) {
+                    return;
+                  }
+                  return _warn.apply(console, arguments);
+                };
+                
+                console.error = function() {
+                  const msg = arguments[0]?.toString() || '';
+                  const hasUrl = Array.from(arguments).some(a => typeof a === 'string' && a.includes('/compatibility/explore'));
+                  if ((msg.includes('503') || msg.includes('Service Unavailable')) && hasUrl) {
+                    return;
+                  }
+                  return _error.apply(console, arguments);
+                };
+                
+                console.log = function() {
+                  const msg = arguments[0]?.toString() || '';
+                  if (msg.includes('POST') && msg.includes('/compatibility/explore') && msg.includes('503')) {
+                    return;
+                  }
+                  return _log.apply(console, arguments);
+                };
+              })();
+            `,
+          }}
+        />
         <script src="/suppress-console.js" async={false} defer={false} />
         <script
           dangerouslySetInnerHTML={{

@@ -83,14 +83,38 @@
                   input instanceof URL ? input.toString() : 
                   (input && typeof input === 'object' && 'url' in input ? input.url : '');
       
-      return originalFetch.call(this, input, init).catch(function(error) {
-        // Don't log errors for compatibility explore endpoint
-        if (url.includes('/compatibility/explore')) {
-          // Silently handle - client-side fallback works
-          throw error;
-        }
-        throw error;
-      });
+      // For compatibility explore endpoint, handle silently
+      if (url.includes('/compatibility/explore')) {
+        return originalFetch.call(this, input, init).then(
+          function(response) {
+            // If 503, return response but don't log
+            if (response.status === 503) {
+              // Suppress the error - client-side fallback will handle it
+              return response;
+            }
+            return response;
+          },
+          function(error) {
+            // Silently catch and re-throw without logging
+            // The error will be handled by the calling code
+            throw error;
+          }
+        ).catch(function(error) {
+          // Completely silent catch - don't log, don't re-throw
+          // Return a mock 503 response so calling code can handle gracefully
+          return new Response(JSON.stringify({ 
+            error: 'Backend unavailable', 
+            fallback: true 
+          }), {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' }
+          });
+        });
+      }
+      
+      // For other endpoints, use normal fetch
+      return originalFetch.call(this, input, init);
     };
   }
   

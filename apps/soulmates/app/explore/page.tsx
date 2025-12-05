@@ -299,10 +299,7 @@ function ExplorePageContent() {
 
         // If backend returned fallback error, skip merging (client-side already shown)
         if ((data as any)?.fallback || (data as any)?.error) {
-          // Client-side result already displayed, just log
-          if (process.env.NODE_ENV === 'development') {
-            console.log("Backend unavailable, using client-side calculation");
-          }
+          // Client-side result already displayed, silently use it
           setLoading(false);
           return;
         }
@@ -331,27 +328,41 @@ function ExplorePageContent() {
             },
           });
         } catch (e) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error("Analytics error:", e);
-          }
+          // Silently fail analytics
         }
-      } catch (apiError) {
+      } catch (apiError: any) {
         // Backend API failed, but we already have client-side results
-        if (process.env.NODE_ENV === 'development') {
-          console.warn("Backend API unavailable, using client-side results only:", apiError);
+        // Silently handle 503 errors (expected when backend is unavailable)
+        if (apiError?.isFallback || apiError?.status === 503) {
+          // Expected - client-side result already shown
+          setLoading(false);
+          return;
+        }
+        // Only log unexpected errors in development
+        if (process.env.NODE_ENV === 'development' && apiError?.status !== 503) {
+          console.warn("Backend API error:", apiError);
         }
       }
     } catch (err: any) {
-      const errorMessage = err.message || "";
-      if (errorMessage.includes("503") || errorMessage.includes("Service Unavailable") || errorMessage.includes("Backend service unavailable")) {
-        setError("The compatibility service is currently unavailable. Please try again later.");
-      } else {
-        setError(err.message || "Failed to calculate compatibility");
+      // Don't show errors for 503/fallback cases - client-side result is already shown
+      if (err?.isFallback || err?.status === 503 || err?.message?.includes("503") || err?.message?.includes("Backend service unavailable")) {
+        // Client-side result already displayed, no error needed
+        setLoading(false);
+        return;
       }
+      
+      const errorMessage = err.message || "";
+      if (errorMessage.includes("Service Unavailable")) {
+        // Don't show error - client-side result is already displayed
+        setLoading(false);
+        return;
+      }
+      
+      // Only show errors for unexpected failures
+      setError(err.message || "Failed to calculate compatibility");
       if (process.env.NODE_ENV === 'development') {
         console.error("Compatibility exploration error:", err);
       }
-    } finally {
       setLoading(false);
     }
   };

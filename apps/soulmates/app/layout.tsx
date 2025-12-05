@@ -3,6 +3,7 @@ import './globals.css'
 import Link from 'next/link'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 import SessionProvider from '@/components/SessionProvider'
+import '@/lib/suppressConsoleWarnings'
 import NavBar from '@/components/NavBar'
 import MobileOptimizer from '@/components/MobileOptimizer'
 

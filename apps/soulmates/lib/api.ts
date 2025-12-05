@@ -70,9 +70,15 @@ async function apiRequest<T>(
       throw new Error("Unauthorized");
     }
     const error = await response.json().catch(() => ({ detail: "Unknown error" }));
-    // For 503 errors, include more context
+    // For 503 errors, return a special error that can be handled gracefully
+    // (client-side fallback will be used)
     if (response.status === 503) {
-      throw new Error(error.detail || error.error || "Backend service unavailable. Please try again later.");
+      const errorMessage = error.detail || error.error || "Backend service unavailable. Using client-side calculation.";
+      // Create a special error that indicates fallback should be used
+      const fallbackError = new Error(errorMessage) as any;
+      fallbackError.isFallback = true;
+      fallbackError.status = 503;
+      throw fallbackError;
     }
     throw new Error(error.detail || error.error || `HTTP ${response.status}`);
   }

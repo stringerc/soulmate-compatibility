@@ -8,6 +8,8 @@ import PlanBadge from "@/components/PlanBadge";
 import ReferralProgram from "@/components/ReferralProgram";
 import DataRecoveryBanner from "@/components/DataRecoveryBanner";
 import DailyFeatures from "@/components/DailyFeatures";
+import PartnerComparison from "@/components/PartnerComparison";
+import AIRecommendations from "@/components/AIRecommendations";
 import AuthGuard from "@/components/AuthGuard";
 import { 
   Heart, 
@@ -37,6 +39,7 @@ interface Profile {
   attachment_style?: string;
   love_languages?: string[];
   calculated_at?: number;
+  traits?: number[];
 }
 
 interface DashboardStats {
@@ -468,6 +471,14 @@ function DashboardPageContent() {
 
         {/* Daily Features */}
         <DailyFeatures />
+
+        {/* Partner Comparison */}
+        <PartnerComparison />
+
+        {/* AI Recommendations */}
+        {profile && profile.traits && (
+          <AIRecommendations userProfile={profile} />
+        )}
 
         {/* Stats Grid */}
         {stats && (

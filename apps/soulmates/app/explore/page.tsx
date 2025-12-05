@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSoulmatesFeature } from "@/hooks/useSoulmatesFeature";
 import { compatibilityApi, profileApi } from "@/lib/api";
 import { logSoulmatesEvent } from "@/lib/analytics";
+import AuthGuard from "@/components/AuthGuard";
 import { 
   Sparkles, 
   Award, 
@@ -54,7 +55,7 @@ interface CompatibilityResult {
   };
 }
 
-export default function ExplorePage() {
+function ExplorePageContent() {
   const canExplore = useSoulmatesFeature("comp_explorer");
   const { tier, canRunCompatibility, runsRemaining, upgradeRequired } = usePlanLimits();
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
@@ -1081,5 +1082,13 @@ export default function ExplorePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ExplorePage() {
+  return (
+    <AuthGuard redirectTo={`/login?callbackUrl=${encodeURIComponent("/explore")}`}>
+      <ExplorePageContent />
+    </AuthGuard>
   );
 }

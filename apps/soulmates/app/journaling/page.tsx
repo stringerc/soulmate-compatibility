@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSoulmatesFeature } from "@/hooks/useSoulmatesFeature";
+import AuthGuard from "@/components/AuthGuard";
 
-export default function JournalingPage() {
+function JournalingPageContent() {
   const canJournal = useSoulmatesFeature("souljourney_journaling");
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -230,6 +231,14 @@ export default function JournalingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function JournalingPage() {
+  return (
+    <AuthGuard redirectTo={`/login?callbackUrl=${encodeURIComponent("/journaling")}`}>
+      <JournalingPageContent />
+    </AuthGuard>
   );
 }
 

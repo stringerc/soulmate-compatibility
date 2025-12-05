@@ -6,6 +6,7 @@ import UpgradePrompt from "@/components/UpgradePrompt";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { profileApi } from "@/lib/api";
 import { calculatePrimaryArchetype, calculateAttachmentStyle, calculateLoveLanguages } from "@/lib/profileCalculations";
+import AuthGuard from "@/components/AuthGuard";
 
 interface ResonanceData {
   window_start: string;
@@ -17,7 +18,7 @@ interface ResonanceData {
   };
 }
 
-export default function SoloLabPage() {
+function SoloLabPageContent() {
   const canUseLab = useSoulmatesFeature("bond_resonance_lab");
   const { canAccessLab, tier, upgradeRequired } = usePlanLimits();
   const [resonance, setResonance] = useState<ResonanceData | null>(null);
@@ -301,6 +302,14 @@ export default function SoloLabPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SoloLabPage() {
+  return (
+    <AuthGuard redirectTo={`/login?callbackUrl=${encodeURIComponent("/lab")}`}>
+      <SoloLabPageContent />
+    </AuthGuard>
   );
 }
 

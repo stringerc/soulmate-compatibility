@@ -7,6 +7,7 @@ import { logSoulmatesEvent } from "@/lib/analytics";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import Link from "next/link";
+import AuthGuard from "@/components/AuthGuard";
 
 interface Bond {
   id: string;
@@ -18,7 +19,7 @@ interface Bond {
   current_label?: string;
 }
 
-export default function BondsPage() {
+function BondsPageContent() {
   const canUseBonds = useSoulmatesFeature("bond_mode_basic");
   const { canCreateBond, bondsRemaining, tier, upgradeRequired } = usePlanLimits();
   const [bonds, setBonds] = useState<Bond[]>([]);
@@ -266,6 +267,14 @@ export default function BondsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BondsPage() {
+  return (
+    <AuthGuard redirectTo={`/login?callbackUrl=${encodeURIComponent("/bonds")}`}>
+      <BondsPageContent />
+    </AuthGuard>
   );
 }
 

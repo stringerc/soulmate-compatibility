@@ -7,6 +7,7 @@ import { billingApi } from "@/lib/api";
 import PlanBadge from "@/components/PlanBadge";
 import ReferralProgram from "@/components/ReferralProgram";
 import DataRecoveryBanner from "@/components/DataRecoveryBanner";
+import AuthGuard from "@/components/AuthGuard";
 import { 
   Heart, 
   Sparkles, 
@@ -45,7 +46,7 @@ interface DashboardStats {
   totalExplorations: number;
 }
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [subscription, setSubscription] = useState<{ tier: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -685,5 +686,13 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <AuthGuard redirectTo={`/login?callbackUrl=${encodeURIComponent("/me")}`}>
+      <DashboardPageContent />
+    </AuthGuard>
   );
 }

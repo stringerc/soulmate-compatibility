@@ -217,6 +217,95 @@ function ExplorePageContent() {
     );
   }
 
+  // Check if user has completed the test (has traits)
+  const hasProfile = isClient && userTraits && userTraits.length === 32;
+  
+  // Show message if user hasn't completed the test
+  if (isClient && !hasProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-2xl p-8 text-white shadow-2xl relative overflow-hidden mb-8">
+            <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent"></div>
+            <div className="relative z-10">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">
+                Compatibility Explorer
+              </h1>
+              <p className="text-lg md:text-xl opacity-95 drop-shadow-md">
+                Discover your compatibility with 8 archetypal partners
+              </p>
+            </div>
+          </div>
+
+          {/* Complete Test Message */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border-2 border-pink-200 dark:border-pink-800">
+            <div className="text-center">
+              <div className="mb-6">
+                <Heart className="w-20 h-20 text-pink-500 mx-auto mb-4" />
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                  Complete Your Compatibility Test First
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
+                  To explore your compatibility with different archetypal partners, you'll need to complete the StoryQuest test first. This will help us understand your unique personality profile.
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-xl p-6 mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  What You'll Get:
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4 text-left">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Your Archetype</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Discover your unique personality archetype</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Compatibility Scores</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">See how you match with 8 archetypal partners</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Detailed Insights</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Understand your relationship patterns</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Personalized Recommendations</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Get archetype-specific compatibility insights</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                href="/onboarding"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 font-semibold text-lg transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                <Sparkles className="w-6 h-6" />
+                Start Your Free Compatibility Test
+                <ArrowRight className="w-6 h-6" />
+              </Link>
+
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                Takes about 10-15 minutes • 100% Free • No credit card required
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleExplore = async (partnerId: string) => {
     // Check if user can run compatibility
     if (!canRunCompatibility) {

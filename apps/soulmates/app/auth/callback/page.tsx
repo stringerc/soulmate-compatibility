@@ -40,6 +40,28 @@ function AuthCallbackPageContent() {
 
         setStatus("success");
         
+        // Check if there's temp test data that needs to be processed
+        if (typeof window !== 'undefined') {
+          const tempDataStr = localStorage.getItem('soulmates_temp_test_data');
+          if (tempDataStr) {
+            try {
+              const tempData = JSON.parse(tempDataStr);
+              // If temp data exists and not expired, ensure callback URL includes showResults
+              if (tempData.expiresAt && Date.now() < tempData.expiresAt) {
+                const url = new URL(callbackUrl, window.location.origin);
+                url.searchParams.set('showResults', 'true');
+                setTimeout(() => {
+                  router.push(url.pathname + url.search);
+                }, 1000);
+                return;
+              }
+            } catch (e) {
+              // If parsing fails, just continue with normal redirect
+              console.error('Failed to parse temp test data:', e);
+            }
+          }
+        }
+        
         // Redirect to callback URL (or dashboard) after 1 second
         setTimeout(() => {
           router.push(callbackUrl);

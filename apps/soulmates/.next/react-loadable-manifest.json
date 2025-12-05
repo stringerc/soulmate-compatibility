@@ -6,7 +6,7 @@
   "app/journaling/page.tsx -> @/lib/analytics": {
     "id": 1010,
     "files": [
-      "static/chunks/10.86ef90532f7e5b2a.js"
+      "static/chunks/10.0e99b32ef31918e7.js"
     ]
   },
   "app/journaling/page.tsx -> @/lib/api": {
@@ -34,8 +34,12 @@
   "app/me/page.tsx -> @/lib/dataSync": {
     "id": 6450,
     "files": [
-      "static/chunks/450.aff861bc92d65ea5.js"
+      "static/chunks/450.5792614f9cd94094.js"
     ]
+  },
+  "app/onboarding/page.tsx -> @/lib/analytics": {
+    "id": 1010,
+    "files": []
   },
   "app/onboarding/page.tsx -> @/lib/api": {
     "id": 4012,
@@ -46,7 +50,7 @@
   "app/onboarding/page.tsx -> @/lib/dataSync": {
     "id": 6450,
     "files": [
-      "static/chunks/450.aff861bc92d65ea5.js"
+      "static/chunks/450.5792614f9cd94094.js"
     ]
   },
   "app/onboarding/page.tsx -> @/lib/profileCalculations": {

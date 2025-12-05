@@ -7,6 +7,14 @@ import { getCurrentUserId } from "./auth";
 
 export type SoulmatesEventName =
   | "onboard_completed"
+  | "onboard_started"
+  | "onboard_abandoned"
+  | "test_completed_anonymous"
+  | "test_completed_authenticated"
+  | "results_gate_viewed"
+  | "results_gate_sign_in_clicked"
+  | "results_gate_sign_up_clicked"
+  | "auth_after_test_completed"
   | "profile_viewed_again"
   | "prompt_answered"
   | "souljourney_entry_created"
@@ -14,7 +22,11 @@ export type SoulmatesEventName =
   | "bond_invite_sent"
   | "bond_invite_accepted"
   | "bond_ended"
-  | "bond_dashboard_viewed";
+  | "bond_dashboard_viewed"
+  | "data_sync_success"
+  | "data_sync_failed"
+  | "data_exported"
+  | "data_imported";
 
 export interface SoulmatesEvent {
   name: SoulmatesEventName;

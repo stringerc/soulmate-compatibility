@@ -178,6 +178,20 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
         <div className="space-y-4">
           <Link
             href={`/login?callbackUrl=${encodeURIComponent("/onboarding?showResults=true")}`}
+            onClick={() => {
+              // Log sign-in click
+              if (typeof window !== 'undefined') {
+                try {
+                  const { logSoulmatesEvent } = require("@/lib/analytics");
+                  logSoulmatesEvent({
+                    name: "results_gate_sign_in_clicked",
+                    payload: {},
+                  });
+                } catch (e) {
+                  // Ignore errors
+                }
+              }
+            }}
             className="block w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-lg font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
           >
             <Lock className="w-5 h-5" />
@@ -186,6 +200,20 @@ export default function ResultsGate({ testData, onAuthenticated }: ResultsGatePr
           </Link>
           <Link
             href={`/signup?callbackUrl=${encodeURIComponent("/onboarding?showResults=true")}`}
+            onClick={() => {
+              // Log sign-up click
+              if (typeof window !== 'undefined') {
+                try {
+                  const { logSoulmatesEvent } = require("@/lib/analytics");
+                  logSoulmatesEvent({
+                    name: "results_gate_sign_up_clicked",
+                    payload: {},
+                  });
+                } catch (e) {
+                  // Ignore errors
+                }
+              }
+            }}
             className="block w-full px-8 py-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-lg font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2"
           >
             <Users className="w-5 h-5" />

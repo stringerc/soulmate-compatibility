@@ -45,6 +45,23 @@ function OnboardingPageContent() {
     setTestData(data);
     setTestCompleted(true);
 
+    // Log test completion event
+    try {
+      const { logSoulmatesEvent } = await import("@/lib/analytics");
+      logSoulmatesEvent({
+        name: isAuthenticated ? "test_completed_authenticated" : "test_completed_anonymous",
+        payload: {
+          has_birthdate: !!birthdate,
+          has_name: !!name,
+          traits_count: traits.length,
+        },
+      });
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Analytics error:", e);
+      }
+    }
+
     // Save to localStorage temporarily (7-day expiration)
     if (typeof window !== 'undefined') {
       try {
@@ -65,6 +82,19 @@ function OnboardingPageContent() {
     } else {
       // Show results gate (requires authentication)
       setShowResults(true);
+      
+      // Log results gate view
+      try {
+        const { logSoulmatesEvent } = await import("@/lib/analytics");
+        logSoulmatesEvent({
+          name: "results_gate_viewed",
+          payload: {},
+        });
+      } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Analytics error:", e);
+        }
+      }
     }
   };
 
@@ -179,6 +209,23 @@ function OnboardingPageContent() {
   // Handle authentication callback (when user signs in from ResultsGate)
   const handleAuthenticated = async () => {
     if (testData) {
+      // Log conversion event
+      try {
+        const { logSoulmatesEvent } = await import("@/lib/analytics");
+        logSoulmatesEvent({
+          name: "auth_after_test_completed",
+          payload: {
+            has_birthdate: !!testData.birthdate,
+            has_name: !!testData.name,
+            traits_count: testData.traits.length,
+          },
+        });
+      } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Analytics error:", e);
+        }
+      }
+      
       await saveProfileAndShowResults(testData);
     }
   };

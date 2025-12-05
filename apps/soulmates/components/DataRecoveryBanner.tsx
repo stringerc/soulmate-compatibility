@@ -26,7 +26,7 @@ export default function DataRecoveryBanner({ profile, onExport, onSync }: DataRe
     }
 
     // Check if dismissed in this session
-    const dismissedKey = `data_recovery_banner_dismissed_${Date.now().toDateString()}`;
+    const dismissedKey = `data_recovery_banner_dismissed_${new Date().toDateString()}`;
     if (sessionStorage.getItem(dismissedKey)) {
       setDismissed(true);
     }
@@ -82,7 +82,8 @@ export default function DataRecoveryBanner({ profile, onExport, onSync }: DataRe
         <button
           onClick={() => {
             setDismissed(true);
-            sessionStorage.setItem(`data_recovery_banner_dismissed_${new Date().toDateString()}`, 'true');
+            const dismissedKey = `data_recovery_banner_dismissed_${new Date().toDateString()}`;
+            sessionStorage.setItem(dismissedKey, 'true');
           }}
           className="flex-shrink-0 text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-200 transition-colors"
         >

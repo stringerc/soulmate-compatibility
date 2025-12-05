@@ -957,7 +957,6 @@ export default function ExplorePage() {
                     </div>
                   </div>
                 </div>
-            )}
 
             {/* Overall Score - Enhanced */}
             <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-pink-900/20 dark:to-purple-900/20 dark:to-indigo-900/20 rounded-xl p-8 border border-pink-200 dark:border-pink-800">

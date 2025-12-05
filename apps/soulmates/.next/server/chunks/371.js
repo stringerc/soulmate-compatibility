@@ -1,0 +1,1 @@
+"use strict";exports.id=371,exports.ids=[371],exports.modules={76371:(t,e,r)=>{r.d(e,{kO:()=>u,logSoulmatesEvent:()=>o});var s=r(52610);function o(t){(function(t){if(!t||"current_user"===t)(0,s.rc)()})(t.userId)}function u(t,e){}}};

@@ -1,1 +1,1 @@
-{"version":1,"functions":{"/api/v1/soulmates/billing/plans":{},"/api/v1/soulmates/billing/subscription":{}}}
+{"version":1,"functions":{"/api/v1/soulmates/auth/verify":{},"/api/v1/soulmates/billing/plans":{},"/api/v1/soulmates/billing/subscription":{},"/api/v1/soulmates/bonds":{}}}

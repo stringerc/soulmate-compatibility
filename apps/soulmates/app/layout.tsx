@@ -6,6 +6,7 @@ import SessionProvider from '@/components/SessionProvider'
 import '@/lib/suppressConsoleWarnings'
 import NavBar from '@/components/NavBar'
 import MobileOptimizer from '@/components/MobileOptimizer'
+import ConsoleSuppressor from '@/components/ConsoleSuppressor'
 
 export const metadata: Metadata = {
   title: 'Soulmates - Self-Discovery & Compatibility',
@@ -50,43 +51,45 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // EARLIEST POSSIBLE console warning suppression (before ANY other scripts)
+              // ULTRA-EARLY console suppression - runs before ANY other script
+              // This must execute synchronously before Vercel's instrument.js
               (function() {
                 'use strict';
-                // Suppress Zustand deprecation warnings
-                const originalWarn = console.warn;
-                console.warn = function(...args) {
-                  const msg = args[0]?.toString() || '';
-                  if (msg.includes('DEPRECATED') || msg.includes('Default export is deprecated') || msg.includes('zustand')) {
-                    return; // Suppress
-                  }
-                  originalWarn.apply(console, args);
-                };
-                
-                // Suppress 503 errors for compatibility API
-                const originalError = console.error;
-                console.error = function(...args) {
-                  const msg = args[0]?.toString() || '';
-                  const url = args.find(a => typeof a === 'string' && a.includes('/compatibility/explore'))?.toString() || '';
-                  if (msg.includes('503') || msg.includes('Service Unavailable') || url.includes('/compatibility/explore')) {
-                    return; // Suppress expected 503 errors
-                  }
-                  originalError.apply(console, args);
-                };
-                
-                // Override fetch to suppress 503 network errors
-                if (typeof window !== 'undefined' && window.fetch) {
-                  const originalFetch = window.fetch;
-                  window.fetch = function(input, init) {
-                    return originalFetch.call(this, input, init).catch(function(error) {
-                      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input && typeof input === 'object' && 'url' in input ? input.url : '');
-                      if (url.includes('/compatibility/explore')) {
-                        // Silently handle - client-side fallback works
-                        throw error;
-                      }
-                      throw error;
-                    });
+                try {
+                  // Capture console methods immediately
+                  const _warn = console.warn;
+                  const _error = console.error;
+                  const _log = console.log;
+                  
+                  // Suppress Zustand warnings
+                  console.warn = function() {
+                    const msg = arguments[0]?.toString() || '';
+                    if (msg.includes('DEPRECATED') || msg.includes('zustand') || msg.includes('Default export')) {
+                      return;
+                    }
+                    return _warn.apply(console, arguments);
                   };
+                  
+                  // Suppress 503 errors
+                  console.error = function() {
+                    const msg = arguments[0]?.toString() || '';
+                    const hasUrl = Array.from(arguments).some(a => typeof a === 'string' && a.includes('/compatibility/explore'));
+                    if ((msg.includes('503') || msg.includes('Service Unavailable')) && hasUrl) {
+                      return;
+                    }
+                    return _error.apply(console, arguments);
+                  };
+                  
+                  // Suppress network logs
+                  console.log = function() {
+                    const msg = arguments[0]?.toString() || '';
+                    if (msg.includes('POST') && msg.includes('/compatibility/explore') && msg.includes('503')) {
+                      return;
+                    }
+                    return _log.apply(console, arguments);
+                  };
+                } catch(e) {
+                  // Silently fail if suppression doesn't work
                 }
               })();
             `,
@@ -94,6 +97,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-200">
+        <ConsoleSuppressor />
         <MobileOptimizer />
         <SessionProvider>
           <AnalyticsProvider>

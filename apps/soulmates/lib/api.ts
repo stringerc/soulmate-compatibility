@@ -55,35 +55,47 @@ async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
   
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: "include", // For cookies if needed
-  });
-  
-  if (!response.ok) {
-    if (response.status === 401) {
-      // Redirect to login
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: "include", // For cookies if needed
+    });
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Redirect to login
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        throw new Error("Unauthorized");
       }
-      throw new Error("Unauthorized");
+      
+      // For 503 errors on compatibility explore, silently handle (client-side fallback)
+      if (response.status === 503 && endpoint.includes('/compatibility/explore')) {
+        const error = await response.json().catch(() => ({ detail: "Backend unavailable" }));
+        const fallbackError = new Error("Backend service unavailable (client-side fallback active)") as any;
+        fallbackError.isFallback = true;
+        fallbackError.status = 503;
+        throw fallbackError;
+      }
+      
+      const error = await response.json().catch(() => ({ detail: "Unknown error" }));
+      throw new Error(error.detail || error.error || `HTTP ${response.status}`);
     }
-    const error = await response.json().catch(() => ({ detail: "Unknown error" }));
-    // For 503 errors, return a special error that can be handled gracefully
-    // (client-side fallback will be used)
-    if (response.status === 503) {
-      const errorMessage = error.detail || error.error || "Backend service unavailable. Using client-side calculation.";
-      // Create a special error that indicates fallback should be used
-      const fallbackError = new Error(errorMessage) as any;
+    
+    return response.json();
+  } catch (error: any) {
+    // Silently handle 503 errors for compatibility explore (expected behavior)
+    if (error?.status === 503 && endpoint.includes('/compatibility/explore')) {
+      // Re-throw as fallback error (will be caught by explore page)
+      const fallbackError = new Error("Backend service unavailable (client-side fallback active)") as any;
       fallbackError.isFallback = true;
-      fallbackError.status = 503;
       throw fallbackError;
     }
-    throw new Error(error.detail || error.error || `HTTP ${response.status}`);
+    throw error;
   }
   
-  return response.json();
 }
 
 // Profile API

@@ -37,6 +37,9 @@ export default function NavBar() {
             <Link href="/explore" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition">
               Explore
             </Link>
+            <Link href="/discover" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition">
+              Discover
+            </Link>
             <Link href="/bonds" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition">
               Bonds
             </Link>

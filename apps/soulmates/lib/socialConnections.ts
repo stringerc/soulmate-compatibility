@@ -1,0 +1,191 @@
+/**
+ * Social Connections System
+ * Manages friend connections, mutual friends, and social graph
+ * Foundation for Friends of Friends Discovery feature
+ */
+
+export interface SocialConnection {
+  id: string;
+  userId: string;
+  connectedUserId: string;
+  connectionType: 'facebook' | 'instagram' | 'linkedin' | 'manual';
+  connectedAt: number;
+  metadata?: {
+    name?: string;
+    profilePicture?: string;
+    mutualFriends?: string[];
+  };
+}
+
+export interface MutualConnection {
+  userId: string;
+  mutualFriendIds: string[];
+  count: number;
+}
+
+/**
+ * Store social connection (for now in localStorage, later in backend)
+ */
+export function storeSocialConnection(connection: Omit<SocialConnection, 'id' | 'connectedAt'>): SocialConnection {
+  if (typeof window === 'undefined') {
+    throw new Error('Cannot store connection on server');
+  }
+
+  const fullConnection: SocialConnection = {
+    ...connection,
+    id: `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    connectedAt: Date.now(),
+  };
+
+  try {
+    const existing = JSON.parse(localStorage.getItem('soulmates_social_connections') || '[]');
+    existing.push(fullConnection);
+    localStorage.setItem('soulmates_social_connections', JSON.stringify(existing));
+  } catch (e) {
+    console.error('Failed to store social connection:', e);
+  }
+
+  return fullConnection;
+}
+
+/**
+ * Get user's social connections
+ */
+export function getUserConnections(userId: string): SocialConnection[] {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const all = JSON.parse(localStorage.getItem('soulmates_social_connections') || '[]');
+    return all.filter((conn: SocialConnection) => conn.userId === userId);
+  } catch (e) {
+    console.error('Failed to get connections:', e);
+    return [];
+  }
+}
+
+/**
+ * Find mutual connections between two users
+ */
+export function findMutualConnections(
+  userId1: string,
+  userId2: string
+): MutualConnection {
+  const connections1 = getUserConnections(userId1);
+  const connections2 = getUserConnections(userId2);
+
+  const friendIds1 = new Set(connections1.map(c => c.connectedUserId));
+  const friendIds2 = new Set(connections2.map(c => c.connectedUserId));
+
+  const mutualFriendIds = Array.from(friendIds1).filter(id => friendIds2.has(id));
+
+  return {
+    userId: userId2,
+    mutualFriendIds,
+    count: mutualFriendIds.length,
+  };
+}
+
+/**
+ * Get friends of friends (potential matches)
+ */
+export function getFriendsOfFriends(
+  userId: string,
+  excludeIds: string[] = []
+): Array<{
+  userId: string;
+  mutualConnections: MutualConnection;
+  connectionPath: string[]; // Path showing how they're connected
+}> {
+  const userConnections = getUserConnections(userId);
+  const friendsOfFriends: Map<string, {
+    userId: string;
+    mutualConnections: MutualConnection;
+    connectionPath: string[];
+  }> = new Map();
+
+  // For each direct friend
+  for (const friend of userConnections) {
+    // Get their connections
+    const friendConnections = getUserConnections(friend.connectedUserId);
+    
+    // For each friend of friend
+    for (const fof of friendConnections) {
+      // Skip if it's the original user or excluded
+      if (fof.connectedUserId === userId || excludeIds.includes(fof.connectedUserId)) {
+        continue;
+      }
+
+      // Find mutual connections
+      const mutual = findMutualConnections(userId, fof.connectedUserId);
+      
+      if (mutual.count > 0) {
+        const existing = friendsOfFriends.get(fof.connectedUserId);
+        if (!existing || mutual.count > existing.mutualConnections.count) {
+          friendsOfFriends.set(fof.connectedUserId, {
+            userId: fof.connectedUserId,
+            mutualConnections: mutual,
+            connectionPath: [friend.connectedUserId, fof.connectedUserId],
+          });
+        }
+      }
+    }
+  }
+
+  return Array.from(friendsOfFriends.values()).sort(
+    (a, b) => b.mutualConnections.count - a.mutualConnections.count
+  );
+}
+
+/**
+ * Simulate OAuth connection (for development/testing)
+ * In production, this would call actual OAuth APIs
+ */
+export async function connectSocialAccount(
+  provider: 'facebook' | 'instagram' | 'linkedin',
+  userId: string
+): Promise<{ success: boolean; connectionsAdded: number }> {
+  // In production, this would:
+  // 1. Initiate OAuth flow
+  // 2. Get friend list from provider API
+  // 3. Store connections in backend
+  // 4. Return success
+
+  // For now, simulate with mock data
+  if (typeof window === 'undefined') {
+    return { success: false, connectionsAdded: 0 };
+  }
+
+  // Simulate finding existing users who have connected
+  const existingConnections = JSON.parse(
+    localStorage.getItem('soulmates_social_connections') || '[]'
+  );
+  
+  // Find unique connected user IDs (simulate friends)
+  const existingUserIds = new Set<string>(
+    existingConnections
+      .filter((c: SocialConnection) => c.userId !== userId)
+      .map((c: SocialConnection) => c.connectedUserId)
+  );
+
+  // Add some mock connections
+  const mockConnections = Array.from(existingUserIds)
+    .slice(0, 5) // Limit to 5 for demo
+    .map((connectedUserId) => ({
+      userId,
+      connectedUserId,
+      connectionType: provider,
+    }));
+
+  let added = 0;
+  for (const conn of mockConnections) {
+    try {
+      storeSocialConnection(conn);
+      added++;
+    } catch (e) {
+      console.error('Failed to add connection:', e);
+    }
+  }
+
+  return { success: true, connectionsAdded: added };
+}
+

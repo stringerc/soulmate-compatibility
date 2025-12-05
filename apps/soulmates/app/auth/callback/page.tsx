@@ -35,6 +35,35 @@ function AuthCallbackPageContent() {
           localStorage.setItem("auth_token", data.token);
           if (data.user?.email) {
             localStorage.setItem("user_email", data.user.email);
+            
+            // Check if there's temp test data - if so, send results access email
+            const tempDataStr = localStorage.getItem('soulmates_temp_test_data');
+            if (tempDataStr) {
+              try {
+                const tempData = JSON.parse(tempDataStr);
+                if (tempData.expiresAt && Date.now() < tempData.expiresAt) {
+                  // User just authenticated and has test data - send results access email
+                  fetch("/api/v1/soulmates/emails/send", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      email: data.user.email,
+                      emailType: "results_access",
+                      userName: tempData.name || undefined,
+                    }),
+                  }).catch((e) => {
+                    // Silently fail
+                    if (process.env.NODE_ENV === 'development') {
+                      console.error("Failed to send results access email:", e);
+                    }
+                  });
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
           }
         }
 

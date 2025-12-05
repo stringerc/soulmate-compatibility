@@ -49,6 +49,37 @@ export default function SignupPage() {
       }
 
       setSuccess(true);
+
+      // Send welcome email (non-blocking, don't wait for it)
+      if (typeof window !== 'undefined') {
+        // Store email temporarily for email sequence
+        localStorage.setItem('temp_user_email', email);
+        
+        fetch("/api/v1/soulmates/emails/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            emailType: "welcome",
+            userName: name || undefined,
+          }),
+        }).catch((e) => {
+          // Silently fail - email sending shouldn't block signup
+          if (process.env.NODE_ENV === 'development') {
+            console.error("Failed to send welcome email:", e);
+          }
+        });
+
+        // Schedule engagement email (3 days later)
+        try {
+          const { scheduleEngagementEmail } = await import("@/lib/emailScheduler");
+          scheduleEngagementEmail(email, name || undefined);
+        } catch (e) {
+          // Ignore errors
+        }
+      }
     } catch (err: any) {
       console.error("Signup error:", err);
       setError(err.message || "Failed to send magic link. Please try again.");

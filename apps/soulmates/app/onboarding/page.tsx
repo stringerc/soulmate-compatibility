@@ -95,6 +95,36 @@ function OnboardingPageContent() {
           console.error("Analytics error:", e);
         }
       }
+
+      // Send test completion reminder email (non-blocking)
+      // Try to get email from localStorage or use a placeholder
+      if (typeof window !== 'undefined') {
+        try {
+          const userEmail = localStorage.getItem('user_email') || 
+                           localStorage.getItem('temp_user_email');
+          
+          if (userEmail) {
+            fetch("/api/v1/soulmates/emails/send", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: userEmail,
+                emailType: "test_completion_reminder",
+                userName: name || undefined,
+              }),
+            }).catch((e) => {
+              // Silently fail - email sending shouldn't block flow
+              if (process.env.NODE_ENV === 'development') {
+                console.error("Failed to send test completion reminder:", e);
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      }
     }
   };
 
@@ -191,6 +221,34 @@ function OnboardingPageContent() {
         }
       }
       
+      // Send results access email (non-blocking)
+      if (typeof window !== 'undefined') {
+        try {
+          const userEmail = localStorage.getItem('user_email');
+          if (userEmail) {
+            fetch("/api/v1/soulmates/emails/send", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: userEmail,
+                emailType: "results_access",
+                userName: data.name || undefined,
+                archetype: primaryArchetype || undefined,
+              }),
+            }).catch((e) => {
+              // Silently fail - email sending shouldn't block flow
+              if (process.env.NODE_ENV === 'development') {
+                console.error("Failed to send results access email:", e);
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      }
+
       // Redirect to dashboard
       router.push("/me");
     } catch (error) {

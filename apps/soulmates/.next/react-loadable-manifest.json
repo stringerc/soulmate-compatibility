@@ -34,7 +34,7 @@
   "app/me/page.tsx -> @/lib/dataSync": {
     "id": 6450,
     "files": [
-      "static/chunks/450.5792614f9cd94094.js"
+      "static/chunks/450.284c5abe08eaf224.js"
     ]
   },
   "app/onboarding/page.tsx -> @/lib/analytics": {
@@ -50,7 +50,7 @@
   "app/onboarding/page.tsx -> @/lib/dataSync": {
     "id": 6450,
     "files": [
-      "static/chunks/450.5792614f9cd94094.js"
+      "static/chunks/450.284c5abe08eaf224.js"
     ]
   },
   "app/onboarding/page.tsx -> @/lib/profileCalculations": {

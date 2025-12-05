@@ -64,17 +64,17 @@ export default function ReferralProgram({ userId }: ReferralProgramProps) {
   const rewardTier = getRewardTier();
 
   return (
-    <div className="bg-gradient-to-br from-pink-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 border border-pink-200 dark:border-pink-800">
+    <div className="bg-gradient-to-br from-pink-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 border border-pink-200 dark:border-pink-800 overflow-hidden">
       {ToastComponent}
       <div className="flex items-start gap-4">
-        <div className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg p-3">
+        <div className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg p-3 flex-shrink-0">
           <Gift className="w-6 h-6 text-white" />
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 break-words">
             Invite Friends & Earn Rewards! 🎁
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 break-words">
             Share your referral link and unlock exclusive features as your friends join!
           </p>
 
@@ -88,7 +88,7 @@ export default function ReferralProgram({ userId }: ReferralProgramProps) {
                 type="text"
                 readOnly
                 value={referralCode ? `${typeof window !== 'undefined' ? window.location.origin : 'https://soulmates.syncscript.app'}?ref=${referralCode}` : 'Generating...'}
-                className="flex-1 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-mono"
+                className="flex-1 min-w-0 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-mono truncate"
               />
               <button
                 onClick={handleCopy}
@@ -110,17 +110,17 @@ export default function ReferralProgram({ userId }: ReferralProgramProps) {
           </div>
 
           {/* Referral Stats */}
-          <div className="flex items-center gap-4 mb-4 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-pink-500" />
+          <div className="flex items-center gap-4 mb-4 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg flex-wrap">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Users className="w-5 h-5 text-pink-500 flex-shrink-0" />
               <div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Referrals</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-white">{referralCount}</p>
               </div>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-600 dark:text-gray-400">Current Reward</p>
-              <p className={`text-sm font-semibold ${rewardTier.unlocked ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+              <p className={`text-sm font-semibold break-words ${rewardTier.unlocked ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
                 {rewardTier.unlocked ? `✓ ${rewardTier.tier}` : `${rewardTier.tier} (${rewardTier.next} more)`}
               </p>
             </div>
@@ -130,17 +130,21 @@ export default function ReferralProgram({ userId }: ReferralProgramProps) {
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Reward Tiers:</p>
             <div className="space-y-1 text-xs">
-              <div className={`flex items-center gap-2 ${referralCount >= 1 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
-                {referralCount >= 1 ? '✓' : '○'} 1 referral: Premium Insights (1 month)
+              <div className={`flex items-start gap-2 break-words ${referralCount >= 1 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+                <span className="flex-shrink-0">{referralCount >= 1 ? '✓' : '○'}</span>
+                <span className="break-words">1 referral: Premium Insights (1 month)</span>
               </div>
-              <div className={`flex items-center gap-2 ${referralCount >= 3 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
-                {referralCount >= 3 ? '✓' : '○'} 3 referrals: Advanced Compatibility features
+              <div className={`flex items-start gap-2 break-words ${referralCount >= 3 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+                <span className="flex-shrink-0">{referralCount >= 3 ? '✓' : '○'}</span>
+                <span className="break-words">3 referrals: Advanced Compatibility features</span>
               </div>
-              <div className={`flex items-center gap-2 ${referralCount >= 5 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
-                {referralCount >= 5 ? '✓' : '○'} 5 referrals: Couple Mode early access
+              <div className={`flex items-start gap-2 break-words ${referralCount >= 5 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+                <span className="flex-shrink-0">{referralCount >= 5 ? '✓' : '○'}</span>
+                <span className="break-words">5 referrals: Couple Mode early access</span>
               </div>
-              <div className={`flex items-center gap-2 ${referralCount >= 10 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
-                {referralCount >= 10 ? '✓' : '○'} 10 referrals: Lifetime premium features
+              <div className={`flex items-start gap-2 break-words ${referralCount >= 10 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+                <span className="flex-shrink-0">{referralCount >= 10 ? '✓' : '○'}</span>
+                <span className="break-words">10 referrals: Lifetime premium features</span>
               </div>
             </div>
           </div>
